@@ -11,6 +11,7 @@ import {
 import { Style } from 'radium';
 import JSON2_mod from '../../helpers/json2-mod';
 import introspectionQuery from './introspectionQuery';
+import Radium from 'radium';
 
 const styles = {
   container: {
@@ -35,21 +36,33 @@ const styles = {
     flexDirection: 'row',
     alignItems: 'center',
     lineHeight: '25px',
-    color: '#333',
+    color: '#767676',
     backgroundColor: '#fff',
     backgroundRepeat: 'noRepeat',
     backgroundPosition: 'right 8px center',
-    border: '1px solid #ddd',
-    borderTopLeftRadius: 3,
-    borderBottomLeftRadius: 3,
+    borderStyle: 'solid',
+    borderColor: '#ddd',
+    borderWidth: '1px',
+    borderTopLeftRadius: 5,
+    borderBottomLeftRadius: 5,
     outline: 'none',
     boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075)',
+  },
+  urlInputWrapperFocused: {
+    borderColor: '#51a7e8',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075),0 0 5px rgba(81,167,232,0.5)',
+    color: '#4078c0',
+    backgroundColor: '#edf2f9',
+  },
+  urlInputWrapperError: {
+    color: '#b00',
+    backgroundImage: 'linear-gradient(#fdf3f3, #e6d6d7)',
+    borderColor: 'rgba(187, 0, 0, 0.4)',
   },
   urlInputLabel: {
     paddingRight: '12px',
     paddingLeft: '12px',
     fontSize: '16px',
-    color: '#767676',
     whiteSpace: 'nowrap',
     borderRight: '1px solid #eee',
     fontFamily: 'Helvetica',
@@ -62,10 +75,10 @@ const styles = {
     paddingTop: '0',
     paddingBottom: '0',
     fontSize: '15px',
-    background: 'none',
     border: 0,
     boxShadow: 'none',
-    outline: 'none'
+    outline: 'none',
+    backgroundColor: 'white',
   },
   fetchButton: {
     padding: '3px 16px',
@@ -81,10 +94,14 @@ const styles = {
     userSelect: 'none',
     backgroundColor: '#eee',
     backgroundImage: 'linear-gradient(#fcfcfc, #eee)',
-    border: '1px solid #d5d5d5',
+    borderStyle: 'solid',
+    borderColor: '#d5d5d5',
     borderLeftWidth: 0,
-    borderTopRightRadius: 3,
-    borderBottomRightRadius: 3,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderRightWidth: 1,
+    borderTopRightRadius: 5,
+    borderBottomRightRadius: 5,
     fontFamily: 'Helvetica',
   },
   toolBarButtonWrapper: {
@@ -123,10 +140,6 @@ const styles = {
     '.link-button': {
       color: '#333',
     },
-    '.urlInputWrapper:focus': {
-      borderColor: '#51a7e8 !important',
-      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075),0 0 5px rgba(81,167,232,0.5) !important',
-    },
     '.fetchButton:hover': {
       textDecoration: 'none',
       backgroundColor: '#ddd !important',
@@ -144,6 +157,7 @@ const basicTypesDefaultValues = {
   Boolean: false,
 };
 
+@Radium
 export default class CustomGraphiQL extends Component {
   constructor() {
     super();
@@ -154,6 +168,8 @@ export default class CustomGraphiQL extends Component {
       variables: 'null',
       schema: null,
       graphQLEndpoint: '',
+      urlError: false,
+      schemaFetchError: '',
     };
   }
 
@@ -280,10 +296,15 @@ export default class CustomGraphiQL extends Component {
       console.log('schema is', schema);
       this.setState({
         schema: schema,
-        graphQLEndpoint: url
+        graphQLEndpoint: url,
+        urlError: false,
+        schemaFetchError: '',
       });
     } catch(error) {
-
+      this.setState({
+        urlError: true,
+        schemaFetchError: error.toString()
+      });
     }
   }
 
@@ -404,14 +425,14 @@ export default class CustomGraphiQL extends Component {
 
   render() {
     const showGenerateMutation = !!this.state.schema && !!this.state.schema.getMutationType();
+    const inputWrapperStyle = this.state.inputFocused ? styles.urlInputWrapperFocused : (this.state.urlError ? styles.urlInputWrapperError : null);
     return (
       <div style={styles.container}>
         <div style={styles.topBar}>
           <form>
             <label
               ref={component => !!component && (this.labelRef = component)}
-              className={'urlInputWrapper'}
-              style={styles.urlInputWrapper}
+              style={[styles.urlInputWrapper, inputWrapperStyle]}
               tabIndex={-1}
             >
               <div style={styles.urlInputLabel}>GraphQL Endpoint</div>
@@ -420,8 +441,8 @@ export default class CustomGraphiQL extends Component {
                 style={styles.urlInput}
                 type={'text'}
                 placeholder={'http://localhost:8080/graphql'}
-                onFocus={this.inputFocused}
-                onBlur={this.inputBlurred}
+                onFocus={() => this.setState({ inputFocused: true, urlError: false })}
+                onBlur={() => this.setState({ inputFocused: false })}
               />
             </label>
           </form>
