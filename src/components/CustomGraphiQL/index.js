@@ -173,6 +173,12 @@ export default class CustomGraphiQL extends Component {
     };
   }
 
+  componentDidMount() {
+    const currentURL = window.localStorage.getItem('currentURL');
+    this.inputRef.value = currentURL;
+    this.fetchGraphQLSchema(currentURL);
+  }
+
   isScalar(x) {
     return x === 'GraphQLScalarType';
   }
@@ -278,10 +284,8 @@ export default class CustomGraphiQL extends Component {
     return `${graphqlObject.name} ${argsString} ${subSelectionString}`;
   }
 
-  @autobind
-  async onFetchButtonPressed() {
+  async fetchGraphQLSchema(url) {
     try {
-      const url = this.inputRef.value;
       const graphQLParams = { query: introspectionQuery };
       const response = await fetch(url, {
         method: 'post',
@@ -294,6 +298,7 @@ export default class CustomGraphiQL extends Component {
       const result = await response.json();
       const schema = buildClientSchema(result.data);
       console.log('schema is', schema);
+      window.localStorage.setItem(`currentURL`, url);
       this.setState({
         schema: schema,
         graphQLEndpoint: url,
@@ -306,6 +311,12 @@ export default class CustomGraphiQL extends Component {
         schemaFetchError: error.toString()
       });
     }
+  }
+
+  @autobind
+  onFetchButtonPressed() {
+    const url = this.inputRef.value;
+    this.fetchGraphQLSchema(url);
   }
 
   @autobind
