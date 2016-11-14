@@ -175,7 +175,18 @@ export default class CustomGraphiQL extends Component {
 
   componentDidMount() {
     const currentURL = window.localStorage.getItem('currentURL');
-    this.inputRef.value = currentURL;
+    if (!currentURL) {
+      return;
+    }
+    // eslint-disable-next-line react/no-direct-mutation-state
+    this.state.graphQLEndpoint = currentURL;
+    const currentURLQuery = window.localStorage.getItem(`${currentURL}:query`);
+    const currentURLVariables = window.localStorage.getItem(`${currentURL}:variables`);
+    this.setState({
+      query: !!currentURLQuery ? currentURLQuery : '',
+      variables: !!currentURLVariables ? currentURLVariables : '',
+    });
+    !!this.inputRef && (this.inputRef.value = currentURL);
     this.fetchGraphQLSchema(currentURL);
   }
 
@@ -289,7 +300,6 @@ export default class CustomGraphiQL extends Component {
       const graphQLParams = { query: introspectionQuery };
       const response = await fetch(url, {
         method: 'post',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -314,8 +324,18 @@ export default class CustomGraphiQL extends Component {
   }
 
   @autobind
+  onInputKeyPress(event) {
+    if (event.which === 13) {
+      !!this.inputRef && this.inputRef.blur();
+      this.onFetchButtonPressed();
+      event.preventDefault();
+      return false;
+    }
+  }
+
+  @autobind
   onFetchButtonPressed() {
-    const url = this.inputRef.value;
+    const url = !!this.inputRef && this.inputRef.value;
     this.fetchGraphQLSchema(url);
   }
 
@@ -380,6 +400,11 @@ export default class CustomGraphiQL extends Component {
     const prettyQuery = print(parse(queryString))
     const queryVariablesString = JSON.stringify(queryVariablesObject, null, '  ');
 
+    const currentURL = this.state.graphQLEndpoint;
+    if (currentURL) {
+      window.localStorage.setItem(`${currentURL}:query`, prettyQuery);
+      window.localStorage.setItem(`${currentURL}:variables`, queryVariablesString);
+    }
     this.setState({
       showMutationsPopup: false,
       query: prettyQuery,
@@ -392,6 +417,26 @@ export default class CustomGraphiQL extends Component {
     this.setState({
       showMutationsPopup: !this.state.showMutationsPopup
     });
+  }
+
+  @autobind
+  onEditQuery(queryString) {
+    const currentURL = this.state.graphQLEndpoint;
+    if (!currentURL) {
+      return;
+    }
+
+    window.localStorage.setItem(`${currentURL}:query`, queryString);
+  }
+
+  @autobind  
+  onEditVariables(variablesString) {
+    const currentURL = this.state.graphQLEndpoint;
+    if (!currentURL) {
+      return;
+    }
+
+    window.localStorage.setItem(`${currentURL}:variables`, variablesString);
   }
 
   @autobind
@@ -442,7 +487,6 @@ export default class CustomGraphiQL extends Component {
         <div style={styles.topBar}>
           <form>
             <label
-              ref={component => !!component && (this.labelRef = component)}
               style={[styles.urlInputWrapper, inputWrapperStyle]}
               tabIndex={-1}
             >
@@ -454,6 +498,7 @@ export default class CustomGraphiQL extends Component {
                 placeholder={'http://localhost:8080/graphql'}
                 onFocus={() => this.setState({ inputFocused: true, urlError: false })}
                 onBlur={() => this.setState({ inputFocused: false })}
+                onKeyPress={this.onInputKeyPress}
               />
             </label>
           </form>
@@ -470,6 +515,8 @@ export default class CustomGraphiQL extends Component {
           variables={this.state.variables}
           schema={this.state.schema}
           fetcher={this.graphQLFetcher}
+          onEditQuery={this.onEditQuery}
+          onEditVariables={this.onEditVariables}
         >
           <GraphiQL.Toolbar>
             {(() => {
