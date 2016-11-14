@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /*
 
   **** json2-mod.js
@@ -175,8 +177,6 @@
 // if (typeof JSON2_mod !== 'object') {
 //     JSON2_mod = {};
 // }
-
-/* eslint-disable */
 
 const JSON2_mod = {};
 

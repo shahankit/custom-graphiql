@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import GraphiQL from 'graphiql';
-import './graphiql.css';
+import Radium, { Style } from 'radium';
 import { autobind } from 'core-decorators';
 import fetch from 'isomorphic-fetch';
 import {
@@ -8,10 +8,9 @@ import {
   parse,
   print,
 } from 'graphql';
-import { Style } from 'radium';
-import JSON2_mod from '../../helpers/json2-mod';
+import './graphiql.css';
+import JSON2_MOD from '../../helpers/json2-mod';
 import introspectionQuery from './introspectionQuery';
-import Radium from 'radium';
 
 const styles = {
   container: {
@@ -110,7 +109,7 @@ const styles = {
   popup: {
     position: 'absolute',
     top: '100%',
-    left: 0,   
+    left: 0,
     zIndex: 100,
     paddingTop: 5,
     paddingBottom: 5,
@@ -147,7 +146,7 @@ const styles = {
       borderColor: '#ccc !important',
     }
   },
-}
+};
 
 const basicTypesDefaultValues = {
   Float: 0.0,
@@ -182,12 +181,118 @@ export default class CustomGraphiQL extends Component {
     this.state.graphQLEndpoint = currentURL;
     const currentURLQuery = window.localStorage.getItem(`${currentURL}:query`);
     const currentURLVariables = window.localStorage.getItem(`${currentURL}:variables`);
+    // eslint-disable-next-line react/no-did-mount-set-state
     this.setState({
-      query: !!currentURLQuery ? currentURLQuery : '',
-      variables: !!currentURLVariables ? currentURLVariables : '',
+      query: currentURLQuery || '',
+      variables: currentURLVariables || '',
     });
-    !!this.inputRef && (this.inputRef.value = currentURL);
+    this.inputRef && (this.inputRef.value = currentURL);
     this.fetchGraphQLSchema(currentURL);
+  }
+
+  @autobind
+  onInputKeyPress(event) {
+    if (event.which === 13) {
+      this.inputRef && this.inputRef.blur();
+      this.onFetchButtonPressed();
+      event.preventDefault();
+      return false;
+    }
+
+    return true;
+  }
+
+  @autobind
+  onFetchButtonPressed() {
+    const url = this.inputRef && this.inputRef.value;
+    this.fetchGraphQLSchema(url);
+  }
+
+  @autobind
+  onEditQuery(queryString) {
+    this.state.query = queryString;
+    const currentURL = this.state.graphQLEndpoint;
+    if (!currentURL) {
+      return;
+    }
+
+    window.localStorage.setItem(`${currentURL}:query`, queryString);
+  }
+
+  @autobind
+  onEditVariables(variables) {
+    this.state.variables = variables;
+    const currentURL = this.state.graphQLEndpoint;
+    if (!currentURL) {
+      return;
+    }
+
+    window.localStorage.setItem(`${currentURL}:variables`, variables);
+  }
+
+  getSubSelectionString(graphqlObject) {
+    const type = graphqlObject.type;
+    const typeConstructorName = type.constructor.name;
+    const ofType = type.ofType;
+    const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+
+    if (this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName)) {
+      return '';
+    }
+
+    if (this.isObjectType(ofTypeConstructorName) || this.isObjectType(typeConstructorName)) {
+      const fields = ofType ? ofType.getFields() : type.getFields();
+      if (Object.keys(fields).includes('id')) {
+        return '{ id }';
+      }
+
+      const scalarKey = Object.keys(fields).find((fieldKey) => {
+        const fieldType = fields[fieldKey].type;
+        const fieldTypeConstructorName = fieldType.constructor.name;
+        const fieldOfType = fieldType.ofType;
+        const fieldOfTypeConstructorName = fieldOfType ? fieldOfType.constructor.name : '';
+        return this.isScalar(fieldTypeConstructorName) || this.isScalar(fieldOfTypeConstructorName);
+      });
+      if (scalarKey) {
+        return `{ ${scalarKey} }`;
+      }
+
+      const complexFieldKey = Object.keys(fields).sort()[0];
+      const complexField = fields[complexFieldKey];
+      return `{ ${this.generateOutputObjectString(complexField)} }`;
+    }
+
+    return '';
+  }
+
+  generateInputObject(graphqlObject) {
+    const type = graphqlObject.type;
+    const typeConstructorName = type.constructor.name;
+    const ofType = type.ofType;
+    const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+
+    if (this.isScalar(typeConstructorName)) {
+      return basicTypesDefaultValues[type.name];
+    }
+
+    if (this.isScalar(ofTypeConstructorName)) {
+      if (this.isList(typeConstructorName)) {
+        return [basicTypesDefaultValues[ofType.name]];
+      }
+      return basicTypesDefaultValues[ofType.name];
+    }
+
+    if (this.isObjectType(ofTypeConstructorName) || this.isObjectType(typeConstructorName)) {
+      const fields = ofType ? ofType.getFields() : type.getFields();
+      const fieldsInputObject = {};
+      Object.keys(fields).forEach(fieldKey => (fieldsInputObject[fieldKey] = this.generateInputObject(fields[fieldKey])));
+      if (this.isList(typeConstructorName)) {
+        return [fieldsInputObject];
+      }
+      return fieldsInputObject;
+    }
+
+    return '';
   }
 
   isScalar(x) {
@@ -206,87 +311,22 @@ export default class CustomGraphiQL extends Component {
     return x === 'GraphQLInputObjectType' || x === 'GraphQLObjectType';
   }
 
-  generateInputObject(graphqlObject) {
-    const type = graphqlObject.type;
-    const typeConstructorName = type.constructor.name;
-    const ofType = type.ofType;
-    const ofTypeConstructorName = !!ofType ? ofType.constructor.name : '';
-
-    if (this.isScalar(typeConstructorName)) {
-      return basicTypesDefaultValues[type.name];
-    }
-
-    if (this.isScalar(ofTypeConstructorName)) {
-      if (this.isList(typeConstructorName)) {
-        return [basicTypesDefaultValues[ofType.name]];
-      }
-      return basicTypesDefaultValues[ofType.name];
-    }
-
-    if (this.isObjectType(ofTypeConstructorName) || this.isObjectType(typeConstructorName)) {
-      const fields = !!ofType ? ofType.getFields() : type.getFields();
-      const fieldsInputObject = {};
-      Object.keys(fields).forEach(fieldKey => fieldsInputObject[fieldKey] = this.generateInputObject(fields[fieldKey]));
-      if (this.isList(typeConstructorName)) {
-        return [fieldsInputObject];
-      }
-      return fieldsInputObject;
-    }
-
-    return '';
-  }
-
-  getSubSelectionString(graphqlObject) {
-    const type = graphqlObject.type;
-    const typeConstructorName = type.constructor.name;
-    const ofType = type.ofType;
-    const ofTypeConstructorName = !!ofType ? ofType.constructor.name : '';
-
-    if (this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName)) {
-      return '';
-    }
-
-    if (this.isObjectType(ofTypeConstructorName) || this.isObjectType(typeConstructorName)) {
-      const fields = !!ofType ? ofType.getFields() : type.getFields();
-      if (Object.keys(fields).includes('id')) {
-        return '{ id }';
-      }
-
-      const scalarKey = Object.keys(fields).find(fieldKey => {
-        const fieldType = fields[fieldKey].type;
-        const fieldTypeConstructorName = fieldType.constructor.name;
-        const fieldOfType = fieldType.ofType;
-        const fieldOfTypeConstructorName = !!fieldOfType ? fieldOfType.constructor.name : '';
-        return this.isScalar(fieldTypeConstructorName) || this.isScalar(fieldOfTypeConstructorName);
-      });
-      if (scalarKey) {
-        return `{ ${scalarKey} }`;
-      }
-
-      const complexFieldKey = Object.keys(fields).sort()[0];
-      const complexField = fields[complexFieldKey];
-      return `{ ${this.generateOutputObjectString(complexField)} }`;
-    }
-
-    return '';
-  }
-
   generateOutputObjectString(graphqlObject) {
     const args = graphqlObject.args;
-    const argsStringArray = args.map(item => {
+    const argsStringArray = args.map((item) => {
       const type = item.type;
       const typeConstructorName = type.constructor.name;
       const ofType = type.ofType;
-      const ofTypeConstructorName = !!ofType ? ofType.constructor.name : '';
-      
+      const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+
       const isBasicType = this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName);
 
       const valueObject = this.generateInputObject(item);
-      const valueObjectString = isBasicType ? valueObject : JSON2_mod.stringify(valueObject, null, '', true);
-      return `${item.name}: ${valueObjectString}`
+      const valueObjectString = isBasicType ? valueObject : JSON2_MOD.stringify(valueObject, null, '', true);
+      return `${item.name}: ${valueObjectString}`;
     });
     let argsString = argsStringArray.join(',');
-    if (!!argsString) {
+    if (argsString) {
       argsString = `(${argsString})`;
     }
 
@@ -307,36 +347,21 @@ export default class CustomGraphiQL extends Component {
       });
       const result = await response.json();
       const schema = buildClientSchema(result.data);
+      // eslint-disable-next-line no-console
       console.log('schema is', schema);
-      window.localStorage.setItem(`currentURL`, url);
+      window.localStorage.setItem('currentURL', url);
       this.setState({
-        schema: schema,
+        schema,
         graphQLEndpoint: url,
         urlError: false,
         schemaFetchError: '',
       });
-    } catch(error) {
+    } catch (error) {
       this.setState({
         urlError: true,
         schemaFetchError: error.toString()
       });
     }
-  }
-
-  @autobind
-  onInputKeyPress(event) {
-    if (event.which === 13) {
-      !!this.inputRef && this.inputRef.blur();
-      this.onFetchButtonPressed();
-      event.preventDefault();
-      return false;
-    }
-  }
-
-  @autobind
-  onFetchButtonPressed() {
-    const url = !!this.inputRef && this.inputRef.value;
-    this.fetchGraphQLSchema(url);
   }
 
   @autobind
@@ -351,7 +376,7 @@ export default class CustomGraphiQL extends Component {
       const type = mutationArg.type;
       const typeConstructorName = type.constructor.name;
       const ofType = type.ofType;
-      const ofTypeConstructorName = !!ofType ? ofType.constructor.name : '';
+      const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
 
       const isBasicType = this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName);
 
@@ -360,7 +385,7 @@ export default class CustomGraphiQL extends Component {
       if (!isBasicType) {
         queryVariables.push({
           name: '$input_' + index,
-          type: !!ofType ? ofType.name : type.name,
+          type: ofType ? ofType.name : type.name,
           value: valueObject
         });
       }
@@ -369,12 +394,12 @@ export default class CustomGraphiQL extends Component {
       return `${mutationArg.name}: ${valueObjectString}`;
     });
     let inputString = inputs.join(',');
-    if (!!inputString) {
+    if (inputString) {
       inputString = `(${inputString})`;
     }
 
     let mutationInputString = queryVariables.map(item => (`${item.name}: ${item.type}!`)).join(',');
-    if (!!mutationInputString) {
+    if (mutationInputString) {
       mutationInputString = `(${mutationInputString})`;
     }
 
@@ -384,7 +409,7 @@ export default class CustomGraphiQL extends Component {
     }, {});
 
     const outputFields = mutation.type.getFields();
-    const outputStrings = Object.keys(outputFields).map((fieldKey, index) => {
+    const outputStrings = Object.keys(outputFields).map((fieldKey) => {
       const outputField = outputFields[fieldKey];
       return `${this.generateOutputObjectString(outputField)}`;
     });
@@ -397,7 +422,7 @@ export default class CustomGraphiQL extends Component {
         }
       }
     `;
-    const prettyQuery = print(parse(queryString))
+    const prettyQuery = print(parse(queryString));
     const queryVariablesString = JSON.stringify(queryVariablesObject, null, '  ');
 
     const currentURL = this.state.graphQLEndpoint;
@@ -420,32 +445,12 @@ export default class CustomGraphiQL extends Component {
   }
 
   @autobind
-  onEditQuery(queryString) {
-    const currentURL = this.state.graphQLEndpoint;
-    if (!currentURL) {
-      return;
-    }
-
-    window.localStorage.setItem(`${currentURL}:query`, queryString);
-  }
-
-  @autobind  
-  onEditVariables(variablesString) {
-    const currentURL = this.state.graphQLEndpoint;
-    if (!currentURL) {
-      return;
-    }
-
-    window.localStorage.setItem(`${currentURL}:variables`, variablesString);
-  }
-
-  @autobind
   async graphQLFetcher(graphQLParams) {
     const graphQLEndpoint = this.state.graphQLEndpoint;
     const response = await fetch(graphQLEndpoint, {
       method: 'post',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(graphQLParams),
@@ -480,19 +485,19 @@ export default class CustomGraphiQL extends Component {
   }
 
   render() {
-    const showGenerateMutation = !!this.state.schema && !!this.state.schema.getMutationType();
+    const showGenerateMutation = this.state.schema && this.state.schema.getMutationType();
     const inputWrapperStyle = this.state.inputFocused ? styles.urlInputWrapperFocused : (this.state.urlError ? styles.urlInputWrapperError : null);
     return (
       <div style={styles.container}>
         <div style={styles.topBar}>
           <form>
-            <label
+            <div
               style={[styles.urlInputWrapper, inputWrapperStyle]}
               tabIndex={-1}
             >
               <div style={styles.urlInputLabel}>GraphQL Endpoint</div>
               <input
-                ref={component => !!component && (this.inputRef = component)}
+                ref={component => component && (this.inputRef = component)}
                 style={styles.urlInput}
                 type={'text'}
                 placeholder={'http://localhost:8080/graphql'}
@@ -500,15 +505,15 @@ export default class CustomGraphiQL extends Component {
                 onBlur={() => this.setState({ inputFocused: false })}
                 onKeyPress={this.onInputKeyPress}
               />
-            </label>
+            </div>
           </form>
-          <div
+          <button
             className={'fetchButton'}
             style={styles.fetchButton}
             onClick={this.onFetchButtonPressed}
           >
             Fetch
-          </div>
+          </button>
         </div>
         <GraphiQL
           query={this.state.query}
