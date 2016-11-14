@@ -507,13 +507,13 @@ export default class CustomGraphiQL extends Component {
               />
             </div>
           </form>
-          <button
+          <div
             className={'fetchButton'}
             style={styles.fetchButton}
             onClick={this.onFetchButtonPressed}
           >
             Fetch
-          </button>
+          </div>
         </div>
         <GraphiQL
           query={this.state.query}
