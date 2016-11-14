@@ -282,6 +282,17 @@ export default class CustomGraphiQL extends Component {
       return basicTypesDefaultValues[ofType.name];
     }
 
+    if (this.isEnum(typeConstructorName)) {
+      return type.getValues()[0].value;
+    }
+
+    if (this.isEnum(ofTypeConstructorName)) {
+      if (this.isList(typeConstructorName)) {
+        return [ofType.getValues()[0].value];
+      }
+      return ofType.getValues()[0].value;
+    }
+
     if (this.isObjectType(ofTypeConstructorName) || this.isObjectType(typeConstructorName)) {
       const fields = ofType ? ofType.getFields() : type.getFields();
       const fieldsInputObject = {};
@@ -297,6 +308,10 @@ export default class CustomGraphiQL extends Component {
 
   isScalar(x) {
     return x === 'GraphQLScalarType';
+  }
+
+  isEnum(x) {
+    return x === 'GraphQLEnumType';
   }
 
   isList(x) {
