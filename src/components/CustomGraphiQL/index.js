@@ -8,9 +8,11 @@ import {
   parse,
   print,
 } from 'graphql';
+import CopyToClipboard from 'react-copy-to-clipboard';
 import './graphiql.css';
 import JSON2_MOD from '../../helpers/json2-mod';
 import introspectionQuery from './introspectionQuery';
+import { getParameterByName } from '../../helpers/utility';
 
 const styles = {
   container: {
@@ -29,6 +31,17 @@ const styles = {
     flexDirection: 'row',
     paddingLeft: '100px',
     paddingRight: '100px',
+    height: '53px',
+    boxSizing: 'border-box',
+  },
+  queryStringInputButtons: {
+    display: 'flex',
+    flexDirection: 'row',
+    margin: '0px 8px 8px 8px',
+  },
+  toolBarButtons: {
+    display: 'flex',
+    flexDirection: 'row',
   },
   urlInputWrapper: {
     display: 'flex',
@@ -79,10 +92,12 @@ const styles = {
     outline: 'none',
     backgroundColor: 'white',
   },
-  fetchButton: {
+  shadowButton: {
     padding: '3px 16px',
     fontSize: '14px',
     lineHeight: '20px',
+    height: '32px',
+    boxSizing: 'border-box',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -95,13 +110,53 @@ const styles = {
     backgroundImage: 'linear-gradient(#fcfcfc, #eee)',
     borderStyle: 'solid',
     borderColor: '#d5d5d5',
-    borderLeftWidth: 0,
+    borderLeftWidth: 1,
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderRightWidth: 1,
+    borderTopLeftRadius: 5,
+    borderBottomLeftRadius: 5,
     borderTopRightRadius: 5,
     borderBottomRightRadius: 5,
     fontFamily: 'Helvetica',
+  },
+  copiedButtonStyle: {
+    color: '#55b230',
+  },
+  fetchButton: {
+    borderLeftWidth: 0,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  },
+  copyButton: {
+    minWidth: '70px',
+  },
+  setButton: {
+    marginLeft: '8px',
+    minWidth: '70px',
+  },
+  queryStringInput: {
+    margin: '8px',
+    padding: '0px 8px',
+    width: '300px',
+    minHeight: '30px',
+    fontSize: '15px',
+    backgroundColor: 'white',
+    color: '#333',
+    verticalAlign: 'middle',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 8px center',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: '#ddd',
+    borderRadius: '5px',
+    outline: 'none',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075)',
+  },
+  queryStringInputFocused: {
+    borderColor: '#51a7e8',
+    outline: 'none',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075),0 0 5px rgba(81,167,232,0.5)',
   },
   toolBarButtonWrapper: {
     position: 'relative',
@@ -139,12 +194,12 @@ const styles = {
     '.link-button': {
       color: '#333',
     },
-    '.fetchButton:hover': {
+    '.shadowButton:hover': {
       textDecoration: 'none',
       backgroundColor: '#ddd !important',
       backgroundImage: 'linear-gradient(#eee, #ddd) !important',
       borderColor: '#ccc !important',
-    }
+    },
   },
 };
 
@@ -169,6 +224,8 @@ export default class CustomGraphiQL extends Component {
       graphQLEndpoint: '',
       urlError: false,
       schemaFetchError: '',
+      showQueryStringPopup: false,
+      showCopied: false,
     };
   }
 
@@ -230,6 +287,29 @@ export default class CustomGraphiQL extends Component {
     window.localStorage.setItem(`${currentURL}:variables`, variables);
   }
 
+  @autobind
+  onSetButtonPressed() {
+    const queryStringInput = this.queryStringInputRef.value;
+    const queryString = getParameterByName('query', queryStringInput);
+    const variablesString = getParameterByName('variables', queryStringInput);
+    const url = new URL(queryStringInput);
+    const graphQLEndpoint = url.origin + url.pathname;
+    if (graphQLEndpoint !== this.state.graphQLEndpoint) {
+      this.fetchGraphQLSchema(graphQLEndpoint);
+      this.inputRef.value = graphQLEndpoint;
+    }
+
+    window.localStorage.setItem(`${graphQLEndpoint}:query`, queryString);
+    window.localStorage.setItem(`${graphQLEndpoint}:variables`, variablesString);
+
+    this.setState({
+      query: queryString,
+      variables: variablesString,
+      graphQLEndpoint,
+      showQueryStringPopup: false,
+    });
+  }
+
   getSubSelectionString(graphqlObject) {
     const type = graphqlObject.type;
     const typeConstructorName = type.constructor.name;
@@ -263,6 +343,45 @@ export default class CustomGraphiQL extends Component {
     }
 
     return '';
+  }
+
+  @autobind
+  getSetQueryPressed() {
+    this.setState({
+      showQueryStringPopup: !this.state.showQueryStringPopup
+    });
+  }
+
+  isScalar(x) {
+    return x === 'GraphQLScalarType';
+  }
+
+  isEnum(x) {
+    return x === 'GraphQLEnumType';
+  }
+
+  isList(x) {
+    return x === 'GraphQLList';
+  }
+
+  isNonNull(x) {
+    return x === 'GraphQLNonNull';
+  }
+
+  isObjectType(x) {
+    return x === 'GraphQLInputObjectType' || x === 'GraphQLObjectType';
+  }
+
+  @autobind
+  handleClipBoardCopied() {
+    this.setState({
+      showCopied: true
+    });
+    this.copyTimeout = setTimeout(() => {
+      this.setState({
+        showCopied: false
+      });
+    }, 2000);
   }
 
   generateInputObject(graphqlObject) {
@@ -304,26 +423,6 @@ export default class CustomGraphiQL extends Component {
     }
 
     return '';
-  }
-
-  isScalar(x) {
-    return x === 'GraphQLScalarType';
-  }
-
-  isEnum(x) {
-    return x === 'GraphQLEnumType';
-  }
-
-  isList(x) {
-    return x === 'GraphQLList';
-  }
-
-  isNonNull(x) {
-    return x === 'GraphQLNonNull';
-  }
-
-  isObjectType(x) {
-    return x === 'GraphQLInputObjectType' || x === 'GraphQLObjectType';
   }
 
   generateOutputObjectString(graphqlObject) {
@@ -475,6 +574,59 @@ export default class CustomGraphiQL extends Component {
     return result;
   }
 
+  renderQueryStringInput() {
+    if (!this.state.showQueryStringPopup) {
+      return null;
+    }
+
+    const currentURL = this.state.graphQLEndpoint;
+    let queryString = '';
+    if (currentURL) {
+      const encodedQuery = encodeURIComponent(this.state.query);
+      const encodedVariables = encodeURIComponent(this.state.variables);
+      queryString = `${currentURL}?query=${encodedQuery}&variables=${encodedVariables}`;
+    }
+
+    const queryStringInputStyle = this.state.queryStringInputFocused ? styles.queryStringInputFocused : null;
+    const copiedButtonStyle = this.state.showCopied ? styles.copiedButtonStyle : null;
+
+    return (
+      <div style={styles.popup}>
+        <input
+          ref={component => component && (this.queryStringInputRef = component)}
+          style={[styles.queryStringInput, queryStringInputStyle]}
+          type={'text'}
+          placeholder={'http://localhost:8080/graphql?query={}&variables={}'}
+          defaultValue={queryString}
+          onFocus={() => this.setState({ queryStringInputFocused: true })}
+          onBlur={() => this.setState({ queryStringInputFocused: false })}
+          onKeyPress={this.onQueryStringInputKeyPress}
+        />
+        <div style={styles.queryStringInputButtons}>
+          <CopyToClipboard
+            text={queryString}
+            onCopy={this.handleClipBoardCopied}
+          >
+            <div
+              className={'shadowButton'}
+              style={[styles.shadowButton, copiedButtonStyle]}
+              onClick={this.onCopyButtonPressed}
+            >
+              {this.state.showCopied ? 'Copied' : 'Copy'}
+            </div>
+          </CopyToClipboard>
+          <div
+            className={'shadowButton'}
+            style={[styles.shadowButton, styles.setButton]}
+            onClick={this.onSetButtonPressed}
+          >
+            Set
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   renderMutations() {
     if (!this.state.showMutationsPopup) {
       return null;
@@ -523,8 +675,8 @@ export default class CustomGraphiQL extends Component {
             </div>
           </form>
           <div
-            className={'fetchButton'}
-            style={styles.fetchButton}
+            className={'shadowButton'}
+            style={[styles.shadowButton, styles.fetchButton]}
             onClick={this.onFetchButtonPressed}
           >
             Fetch
@@ -539,22 +691,32 @@ export default class CustomGraphiQL extends Component {
           onEditVariables={this.onEditVariables}
         >
           <GraphiQL.Toolbar>
-            {(() => {
-              if (!showGenerateMutation) {
-                return null;
-              }
+            <div style={styles.toolBarButtons}>
+              {(() => {
+                if (!showGenerateMutation) {
+                  return null;
+                }
 
-              return (
-                <div style={styles.toolBarButtonWrapper}>
-                  {this.renderMutations()}
-                  <GraphiQL.ToolbarButton
-                    title={'Generate mutation query'}
-                    label={'Generate Mutation'}
-                    onClick={this.generateMutationPressed}
-                  />
-                </div>
-              );
-            })()}
+                return (
+                  <div style={styles.toolBarButtonWrapper}>
+                    {this.renderMutations()}
+                    <GraphiQL.ToolbarButton
+                      title={'Generate mutation query'}
+                      label={'Generate Mutation'}
+                      onClick={this.generateMutationPressed}
+                    />
+                  </div>
+                );
+              })()}
+              <div style={styles.toolBarButtonWrapper}>
+                {this.renderQueryStringInput()}
+                <GraphiQL.ToolbarButton
+                  title={'URL with query and variables as query-params'}
+                  label={'Get or Set query'}
+                  onClick={this.getSetQueryPressed}
+                />
+              </div>
+            </div>
           </GraphiQL.Toolbar>
         </GraphiQL>
         <Style rules={styles.classBased} />
