@@ -158,6 +158,30 @@ const styles = {
     outline: 'none',
     boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075),0 0 5px rgba(81,167,232,0.5)',
   },
+  mutationSearchInput: {
+    margin: '8px',
+    padding: '0px 8px',
+    width: '250px',
+    minHeight: '28px',
+    fontSize: '14px',
+    backgroundColor: 'white',
+    color: '#333',
+    verticalAlign: 'middle',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 8px center',
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    borderColor: '#ddd',
+    borderRadius: '5px',
+    outline: 'none',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075)',
+    fontFamily: 'Helvetica',
+  },
+  mutationSearchInputFocused: {
+    borderColor: '#51a7e8',
+    outline: 'none',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075),0 0 5px rgba(81,167,232,0.5)',
+  },
   toolBarButtonWrapper: {
     position: 'relative',
   },
@@ -170,7 +194,7 @@ const styles = {
     paddingBottom: 5,
     marginTop: 2,
     marginLeft: 5,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f8f8',
     backgroundClip: 'padding-box',
     border: '1px solid rgba(0,0,0,0.15)',
     borderRadius: 4,
@@ -180,11 +204,14 @@ const styles = {
   },
   button: {
     display: 'block',
-    padding: '4px 10px 4px 15px',
+    padding: '8px 8px 8px 30px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'Helvetica',
+    borderBottom: '1px solid #eee',
   },
   classBased: {
     '.link-button:hover': {
@@ -192,7 +219,8 @@ const styles = {
       color: 'white',
     },
     '.link-button': {
-      color: '#333',
+      color: '#666',
+      backgroundColor: 'white',
     },
     '.shadowButton:hover': {
       textDecoration: 'none',
@@ -226,6 +254,7 @@ export default class CustomGraphiQL extends Component {
       schemaFetchError: '',
       showQueryStringPopup: false,
       showCopied: false,
+      mutationSearchText: '',
     };
   }
 
@@ -635,17 +664,31 @@ export default class CustomGraphiQL extends Component {
     const mutation = this.state.schema.getMutationType();
     const mutationFields = mutation.getFields();
 
+    const mutationSearchInputStyle = this.state.mutationSearchInputFocused ? styles.mutationSearchInputFocused : null;
+    const mutationSearchText = (this.state.mutationSearchText || '').toLowerCase();
+
     return (
       <div style={styles.popup}>
-        {Object.keys(mutationFields).sort().map(mutationName => (
-          <div
-            key={mutationName}
-            className={'link-button'}
-            style={styles.button}
-            onClick={() => this.mutationPressed(mutationName)}
-          >
-            {mutationName}
-          </div>
+        <input
+          onChange={event => this.setState({ mutationSearchText: event.target.value })}
+          style={[styles.mutationSearchInput, mutationSearchInputStyle]}
+          type={'text'}
+          placeholder={'Find mutation...'}
+          onFocus={() => this.setState({ mutationSearchInputFocused: true })}
+          onBlur={() => this.setState({ mutationSearchInputFocused: false })}
+        />
+        {Object.keys(mutationFields)
+          .sort()
+          .filter(value => value.toLowerCase().includes(mutationSearchText))
+          .map(mutationName => (
+            <div
+              key={mutationName}
+              className={'link-button'}
+              style={styles.button}
+              onClick={() => this.mutationPressed(mutationName)}
+            >
+              {mutationName}
+            </div>
         ))}
       </div>
     );
