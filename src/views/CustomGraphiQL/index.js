@@ -7,11 +7,11 @@ import {
   buildClientSchema,
   parse,
   print,
+  introspectionQuery
 } from 'graphql';
 import CopyToClipboard from 'react-copy-to-clipboard';
 import './graphiql.css';
 import JSON2_MOD from '../../helpers/json2-mod';
-import introspectionQuery from './introspectionQuery';
 import { getParameterByName } from '../../helpers/utility';
 
 const styles = {
