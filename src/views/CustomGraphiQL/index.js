@@ -534,7 +534,11 @@ export default class CustomGraphiQL extends Component {
         },
         body: JSON.stringify(graphQLParams)
       });
+      // const response = await fetch(`${url}?query=${encodeURIComponent(graphQLParams.query)}}&variables=${encodeURIComponent('{}')}`, { method: 'get' });
       const result = await response.json();
+      if (result.errors) {
+        throw new Error(JSON.stringify(result.errors));
+      }
       const schema = buildClientSchema(result.data);
       // eslint-disable-next-line no-console
       console.log('schema is', schema);
@@ -550,7 +554,7 @@ export default class CustomGraphiQL extends Component {
       console.error('error in fetching GraphQL schema', error);
       this.setState({
         urlError: true,
-        schemaFetchError: error.toString()
+        schemaFetchError: error.toString(),
       });
     }
   }
@@ -880,6 +884,7 @@ export default class CustomGraphiQL extends Component {
           query={this.state.query}
           variables={this.state.variables}
           schema={this.state.schema}
+          response={this.state.schemaFetchError || null}
           fetcher={this.graphQLFetcher}
           onEditQuery={this.onEditQuery}
           onEditVariables={this.onEditVariables}
