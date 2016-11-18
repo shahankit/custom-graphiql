@@ -33,6 +33,7 @@
     "prefer-template": 0,
     "radix": 0,
     "no-nested-ternary": 0,
+    "no-debugger": 1,
     "max-len": ["error", 200, 2, {"ignoreUrls": true}],
     "no-param-reassign": [2, {"props": false}],
     "no-empty": ["error", { "allowEmptyCatch": true }]

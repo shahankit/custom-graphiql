@@ -158,7 +158,7 @@ const styles = {
     outline: 'none',
     boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075),0 0 5px rgba(81,167,232,0.5)',
   },
-  mutationSearchInput: {
+  searchInput: {
     margin: '8px',
     padding: '0px 8px',
     width: '250px',
@@ -177,7 +177,7 @@ const styles = {
     boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075)',
     fontFamily: 'Helvetica',
   },
-  mutationSearchInputFocused: {
+  searchInputFocused: {
     borderColor: '#51a7e8',
     outline: 'none',
     boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075),0 0 5px rgba(81,167,232,0.5)',
@@ -213,6 +213,23 @@ const styles = {
     fontFamily: 'Helvetica',
     borderBottom: '1px solid #eee',
   },
+  savedQueriesText: {
+    color: '#767676',
+    fontSize: '16px',
+  },
+  saveQueryButton: {
+    padding: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    display: 'border-box',
+    cursor: 'pointer',
+  },
+  crossButton: {
+    display: 'block',
+    float: 'right',
+    fill: '#ccc',
+    cursor: 'pointer',
+  },
   classBased: {
     '.link-button:hover': {
       backgroundColor: '#4078c0',
@@ -227,6 +244,13 @@ const styles = {
       backgroundColor: '#ddd !important',
       backgroundImage: 'linear-gradient(#eee, #ddd) !important',
       borderColor: '#ccc !important',
+    },
+    '.saveQueryButton:hover': {
+      backgroundColor: '#4078c0 !important',
+      color: 'white !important',
+    },
+    '.crossButton:hover': {
+      fill: 'white !important',
     },
   },
 };
@@ -255,6 +279,7 @@ export default class CustomGraphiQL extends Component {
       showQueryStringPopup: false,
       showCopied: false,
       mutationSearchText: '',
+      savedQueriesSearchText: '',
     };
   }
 
@@ -319,6 +344,13 @@ export default class CustomGraphiQL extends Component {
   @autobind
   onSetButtonPressed() {
     const queryStringInput = this.queryStringInputRef.value;
+    this.setQueryFromString(queryStringInput);
+    this.setState({
+      showQueryStringPopup: false,
+    });
+  }
+
+  setQueryFromString(queryStringInput) {
     const queryString = getParameterByName('query', queryStringInput);
     const variablesString = getParameterByName('variables', queryStringInput);
     const url = new URL(queryStringInput);
@@ -335,7 +367,6 @@ export default class CustomGraphiQL extends Component {
       query: queryString,
       variables: variablesString,
       graphQLEndpoint,
-      showQueryStringPopup: false,
     });
   }
 
@@ -381,6 +412,13 @@ export default class CustomGraphiQL extends Component {
     });
   }
 
+  @autobind
+  saveLoadQueryPressed() {
+    this.setState({
+      showSavedQueriesPopup: !this.state.showSavedQueriesPopup
+    });
+  }
+
   isScalar(x) {
     return x === 'GraphQLScalarType';
   }
@@ -399,6 +437,14 @@ export default class CustomGraphiQL extends Component {
 
   isObjectType(x) {
     return x === 'GraphQLInputObjectType' || x === 'GraphQLObjectType';
+  }
+
+  @autobind
+  loadSavedQueryPressed(queryString) {
+    this.setQueryFromString(queryString);
+    this.setState({
+      showSavedQueriesPopup: false
+    });
   }
 
   @autobind
@@ -500,11 +546,41 @@ export default class CustomGraphiQL extends Component {
         schemaFetchError: '',
       });
     } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('error in fetching GraphQL schema', error);
       this.setState({
         urlError: true,
         schemaFetchError: error.toString()
       });
     }
+  }
+
+  @autobind
+  removeQueryPressed(event, queryName) {
+    event.stopPropagation();
+    const currentURL = this.state.graphQLEndpoint;
+    const currentURLQueriesString = window.localStorage.getItem(`${currentURL}:queries`) || '{}';
+    const savedQueries = JSON.parse(currentURLQueriesString);
+    delete savedQueries[queryName];
+    const savedQueriesString = JSON.stringify(savedQueries);
+    window.localStorage.setItem(`${currentURL}:queries`, savedQueriesString);
+    this.setState({});
+  }
+
+  @autobind
+  saveQueryPressed(queryName) {
+    const currentURL = this.state.graphQLEndpoint;
+    const currentURLQueriesString = window.localStorage.getItem(`${currentURL}:queries`) || '{}';
+    const savedQueries = JSON.parse(currentURLQueriesString);
+    const encodedQuery = encodeURIComponent(this.state.query);
+    const encodedVariables = encodeURIComponent(this.state.variables);
+    savedQueries[queryName.replace(' ', '-')] = `${currentURL}?query=${encodedQuery}&variables=${encodedVariables}`;
+    const savedQueriesString = JSON.stringify(savedQueries);
+    window.localStorage.setItem(`${currentURL}:queries`, savedQueriesString);
+    this.setState({
+      showSavedQueriesPopup: false,
+      savedQueriesSearchText: '',
+    });
   }
 
   @autobind
@@ -575,6 +651,7 @@ export default class CustomGraphiQL extends Component {
     }
     this.setState({
       showMutationsPopup: false,
+      mutationSearchText: '',
       query: prettyQuery,
       variables: queryVariablesString
     });
@@ -601,6 +678,80 @@ export default class CustomGraphiQL extends Component {
     });
     const result = await response.json();
     return result;
+  }
+
+  @autobind
+  renderSavedQueriesPopup() {
+    if (!this.state.showSavedQueriesPopup) {
+      return null;
+    }
+
+    let savedQueries = {};
+    const currentURL = this.state.graphQLEndpoint;
+    if (currentURL) {
+      const currentURLQueriesString = window.localStorage.getItem(`${currentURL}:queries`) || '{}';
+      savedQueries = JSON.parse(currentURLQueriesString);
+    }
+    // const totalSavedQueries = Object.keys(savedQueries).length;
+
+    const querySearchText = this.state.savedQueriesSearchText;
+    const searchInputStyle = this.state.savedQueriesSearchInputFocused ? styles.searchInputFocused : null;
+    return (
+      <div style={styles.popup}>
+        <input
+          onChange={event => this.setState({ savedQueriesSearchText: event.target.value })}
+          style={[styles.searchInput, searchInputStyle]}
+          type={'text'}
+          placeholder={'Find or save query...'}
+          onFocus={() => this.setState({ savedQueriesSearchInputFocused: true })}
+          onBlur={() => this.setState({ savedQueriesSearchInputFocused: false })}
+        />
+        {Object.keys(savedQueries)
+          .sort()
+          .filter(value => value.toLowerCase().includes(querySearchText))
+          .map(queryName => (
+            <div
+              key={queryName}
+              className={'link-button'}
+              style={styles.button}
+              onClick={() => this.loadSavedQueryPressed(savedQueries[queryName])}
+            >
+              {queryName}
+              <div
+                style={styles.crossButton}
+                className={'crossButton'}
+                onClick={event => this.removeQueryPressed(event, queryName)}
+              >
+                <svg
+                  height="16"
+                  role="img"
+                  version="1.1"
+                  viewBox="0 0 12 16"
+                  width="12"
+                >
+                  <path fillRule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48z" />
+                </svg>
+              </div>
+            </div>
+        ))}
+        {(() => {
+          const hasSavedQuery = Object.keys(savedQueries).find(item => (querySearchText.toLowerCase() === item.toLowerCase()));
+          if (querySearchText.length > 0 && !hasSavedQuery) {
+            return (
+              <div
+                className={'saveQueryButton'}
+                style={styles.saveQueryButton}
+                onClick={() => this.saveQueryPressed(querySearchText)}
+              >
+                Save query: {querySearchText}
+              </div>
+            );
+          }
+
+          return null;
+        })()}
+      </div>
+    );
   }
 
   renderQueryStringInput() {
@@ -664,14 +815,14 @@ export default class CustomGraphiQL extends Component {
     const mutation = this.state.schema.getMutationType();
     const mutationFields = mutation.getFields();
 
-    const mutationSearchInputStyle = this.state.mutationSearchInputFocused ? styles.mutationSearchInputFocused : null;
+    const mutationSearchInputStyle = this.state.mutationSearchInputFocused ? styles.searchInputFocused : null;
     const mutationSearchText = (this.state.mutationSearchText || '').toLowerCase();
 
     return (
       <div style={styles.popup}>
         <input
           onChange={event => this.setState({ mutationSearchText: event.target.value })}
-          style={[styles.mutationSearchInput, mutationSearchInputStyle]}
+          style={[styles.searchInput, mutationSearchInputStyle]}
           type={'text'}
           placeholder={'Find mutation...'}
           onFocus={() => this.setState({ mutationSearchInputFocused: true })}
@@ -757,6 +908,14 @@ export default class CustomGraphiQL extends Component {
                   title={'URL with query and variables as query-params'}
                   label={'Get or Set query'}
                   onClick={this.getSetQueryPressed}
+                />
+              </div>
+              <div style={styles.toolBarButtonWrapper}>
+                {this.renderSavedQueriesPopup()}
+                <GraphiQL.ToolbarButton
+                  title={'Save or Load query'}
+                  label={'Save / Load'}
+                  onClick={this.saveLoadQueryPressed}
                 />
               </div>
             </div>
