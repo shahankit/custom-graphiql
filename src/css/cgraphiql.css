@@ -1,9 +1,10 @@
 .graphiql-container {
   color: #141823;
-  display:         flex;
   display: -webkit-flex;
-          flex-direction: row;
+  display: -ms-flexbox;
   -webkit-flex-direction: row;
+      -ms-flex-direction: row;
+          flex-direction: row;
   font-family:
     system,
     -apple-system,
@@ -26,10 +27,13 @@
 
 .graphiql-container .editorWrap {
   display: -webkit-flex;
-  display:         flex;
+  display: -ms-flexbox;
+  display: -ms-flexbox;
   -webkit-flex-direction: column;
+      -ms-flex-direction: column;
           flex-direction: column;
   -webkit-flex: 1;
+      -ms-flex: 1;
           flex: 1;
 }
 
@@ -44,28 +48,37 @@
 
 .graphiql-container .topBarWrap {
   display: -webkit-flex;
-  display:         flex;
+  display: -ms-flexbox;
   -webkit-flex-direction: row;
+      -ms-flex-direction: row;
           flex-direction: row;
 }
 
 .graphiql-container .topBar {
   -webkit-align-items: center;
+      -ms-align-items: center;
           align-items: center;
   background: -webkit-linear-gradient(#f7f7f7, #e2e2e2);
   background:         linear-gradient(#f7f7f7, #e2e2e2);
   border-bottom: 1px solid #d0d0d0;
   cursor: default;
   display: -webkit-flex;
-  display:         flex;
+  display: -ms-flexbox;
   height: 34px;
   padding: 7px 14px 6px;
   -webkit-flex: 1;
+      -ms-flex: 1;
           flex: 1;
   -webkit-flex-direction: row;
+      -ms-flex-direction: row;
           flex-direction: row;
   -webkit-user-select: none;
+      -ms-user-select: none;
           user-select: none;
+}
+
+.graphiql-container .toolbar {
+  overflow-x: auto;
 }
 
 .graphiql-container .docExplorerShow {
@@ -92,25 +105,30 @@
   margin: 0 3px -1px 0;
   position: relative;
   -webkit-transform: rotate(-45deg);
+      -ms-transform: rotate(-45deg);
           transform: rotate(-45deg);
   width: 9px;
 }
 
 .graphiql-container .editorBar {
   display: -webkit-flex;
-  display:         flex;
+  display: -ms-flexbox;
   -webkit-flex: 1;
+      -ms-flex: 1;
           flex: 1;
   -webkit-flex-direction: row;
+      -ms-flex-direction: row;
           flex-direction: row;
 }
 
 .graphiql-container .queryWrap {
   display: -webkit-flex;
-  display:         flex;
+  display: -ms-flexbox;
   -webkit-flex: 1;
+      -ms-flex: 1;
           flex: 1;
   -webkit-flex-direction: column;
+      -ms-flex-direction: column;
           flex-direction: column;
 }
 
@@ -120,8 +138,10 @@
   display:         flex;
   position: relative;
   -webkit-flex: 1;
+      -ms-flex: 1;
           flex: 1;
   -webkit-flex-direction: column;
+      -ms-flex-direction: column;
           flex-direction: column;
 }
 
@@ -151,15 +171,18 @@
 
 .graphiql-container .query-editor {
   -webkit-flex: 1;
+      -ms-flex: 1;
           flex: 1;
   position: relative;
 }
 
 .graphiql-container .variable-editor {
   display: -webkit-flex;
+  display:     -ms-flex;
   display:         flex;
   height: 29px;
   -webkit-flex-direction: column;
+      -ms-flex-direction: column;
           flex-direction: column;
   position: relative;
 }
@@ -176,19 +199,24 @@
   padding: 6px 0 8px 43px;
   text-transform: lowercase;
   -webkit-user-select: none;
+      -ms-user-select: none;
           user-select: none;
 }
 
 .graphiql-container .codemirrorWrap {
   -webkit-flex: 1;
+      -ms-flex: 1;
           flex: 1;
   position: relative;
+  height: 100%;
 }
 
 .graphiql-container .result-window {
   -webkit-flex: 1;
+      -ms-flex: 1;
           flex: 1;
   position: relative;
+  height: 100%;
 }
 
 .graphiql-container .footer {
@@ -322,6 +350,7 @@
 
 .graphiql-container .CodeMirror-scroll {
   -webkit-overflow-scrolling: touch;
+      -ms-overflow-scrolling: touch;
 }
 
 .graphiql-container .CodeMirror {
@@ -346,6 +375,7 @@
 
 .CodeMirror-hint-information .content {
   -webkit-box-orient: vertical;
+      -ms-box-orient: vertical;
           box-orient: vertical;
   color: #141823;
   display: -webkit-box;
@@ -377,9 +407,11 @@
 .autoInsertedLeaf.cm-property {
   -webkit-animation-duration: 6s;
      -moz-animation-duration: 6s;
+      -ms-animation-duration: 6s;
           animation-duration: 6s;
   -webkit-animation-name: insertionFade;
      -moz-animation-name: insertionFade;
+      -ms-animation-name: insertionFade;
           animation-name: insertionFade;
   border-bottom: 2px solid rgba(255, 255, 255, 0);
   border-radius: 2px;
@@ -463,6 +495,8 @@ div.CodeMirror-lint-message-error, div.CodeMirror-lint-message-warning {
   border-radius: 4px;
   background: #08f;
   background: -webkit-linear-gradient(#43A8FF, #0F83E8);
+  background:    -moz-linear-gradient(#43A8FF, #0F83E8);
+  background:     -ms-linear-gradient(#43A8FF, #0F83E8);
   background:         linear-gradient(#43A8FF, #0F83E8);
   box-shadow:
     0 1px 1px rgba(0, 0, 0, 0.2),
@@ -618,6 +652,7 @@ div.CodeMirror-lint-message-error, div.CodeMirror-lint-message-warning {
   border: 0;
   -webkit-animation: blink 1.06s steps(1) infinite;
   -moz-animation: blink 1.06s steps(1) infinite;
+  -ms-animation: blink 1.06s steps(1) infinite;
   animation: blink 1.06s steps(1) infinite;
 }
 @-moz-keyframes blink {
@@ -776,6 +811,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
 .CodeMirror-gutter-wrapper {
   -webkit-user-select: none;
   -moz-user-select: none;
+  -ms-user-select: none;
   user-select: none;
 }
 
@@ -889,6 +925,39 @@ div.CodeMirror-dragcursors {
 
 /* Help users use markselection to safely style text background */
 span.CodeMirror-selectedtext { background: none; }
+
+.CodeMirror-dialog {
+  position: absolute;
+  left: 0; right: 0;
+  background: inherit;
+  z-index: 15;
+  padding: .1em .8em;
+  overflow: hidden;
+  color: inherit;
+}
+
+.CodeMirror-dialog-top {
+  border-bottom: 1px solid #eee;
+  top: 0;
+}
+
+.CodeMirror-dialog-bottom {
+  border-top: 1px solid #eee;
+  bottom: 0;
+}
+
+.CodeMirror-dialog input {
+  border: 1px solid #d3d6db;
+  outline: none;
+  background: transparent;
+  width: 20em;
+  color: inherit;
+  font-family: monospace;
+}
+
+.CodeMirror-dialog button {
+  font-size: 70%;
+}
 .graphiql-container .doc-explorer {
   background: white;
 }
@@ -896,6 +965,7 @@ span.CodeMirror-selectedtext { background: none; }
 .graphiql-container .doc-explorer-title-bar {
   cursor: default;
   display: -webkit-flex;
+  display: -ms-flexbox;
   display: flex;
   height: 34px;
   line-height: 14px;
@@ -913,6 +983,7 @@ span.CodeMirror-selectedtext { background: none; }
   white-space: nowrap;
   overflow-x: hidden;
   -webkit-flex: 1;
+      -ms-flex: 1;
           flex: 1;
 }
 
@@ -936,6 +1007,7 @@ span.CodeMirror-selectedtext { background: none; }
   position: relative;
   width: 9px;
   -webkit-transform: rotate(-45deg);
+      -ms-transform: rotate(-45deg);
           transform: rotate(-45deg);
 }
 
@@ -989,6 +1061,7 @@ span.CodeMirror-selectedtext { background: none; }
   margin: 0 -15px 10px 0;
   padding: 10px 0;
   -webkit-user-select: none;
+      -ms-user-select: none;
           user-select: none;
 }
 

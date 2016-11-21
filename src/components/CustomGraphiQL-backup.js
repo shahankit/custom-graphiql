@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { PropTypes, Component } from 'react';
 import GraphiQL from 'graphiql';
 import Radium, { Style } from 'radium';
 import { autobind } from 'core-decorators';
@@ -10,30 +10,11 @@ import {
   introspectionQuery
 } from 'graphql';
 import CopyToClipboard from 'react-copy-to-clipboard';
-import './graphiql.css';
+import '../../css/graphiql.css';
 import JSON2_MOD from '../../helpers/json2-mod';
-import { getParameterByName } from '../../helpers/utility';
+import { getParameterByName } from '../helpers/getParameters';
 
 const styles = {
-  container: {
-    height: '100%',
-    margin: 0,
-    width: '100%',
-    overflow: 'hidden',
-  },
-  topBar: {
-    width: '100%',
-    paddingTop: '10px',
-    paddingBottom: '10px',
-    backgroundColor: '#f5f5f5',
-    borderBottom: '1px solid #e5e5e5',
-    display: 'flex',
-    flexDirection: 'row',
-    paddingLeft: '100px',
-    paddingRight: '100px',
-    height: '53px',
-    boxSizing: 'border-box',
-  },
   queryStringInputButtons: {
     display: 'flex',
     flexDirection: 'row',
@@ -263,17 +244,70 @@ const basicTypesDefaultValues = {
   Boolean: false,
 };
 
-@Radium
-export default class CustomGraphiQL extends Component {
-  constructor() {
-    super();
+const defaultQuery =
+`# Welcome to GraphiQL
+#
+# GraphiQL is an in-browser IDE for writing, validating, and
+# testing GraphQL queries.
+#
+# Type queries into this side of the screen, and you will
+# see intelligent typeaheads aware of the current GraphQL type schema and
+# live syntax and validation errors highlighted within the text.
+#
+# To bring up the auto-complete at any point, just press Ctrl-Space.
+#
+# Press the run button above, or Cmd-Enter to execute the query, and the result
+# will appear in the pane to the right.
+`;
 
+export class CustomGraphiQL extends Component {
+  static propTypes = {
+    fetcher: PropTypes.func,
+    schema: PropTypes.instanceOf(GraphQLSchema),
+    query: PropTypes.string,
+    variables: PropTypes.string,
+    operationName: PropTypes.string,
+    response: PropTypes.string,
+    storage: PropTypes.shape({
+      getItem: PropTypes.func,
+      setItem: PropTypes.func
+    }),
+    defaultQuery: PropTypes.string,
+    onEditQuery: PropTypes.func,
+    onEditVariables: PropTypes.func,
+    onEditOperationName: PropTypes.func,
+    onToggleDocs: PropTypes.func,
+    getDefaultFieldNames: PropTypes.func
+  }
+
+  constructor(props) {
+    super(props);
+
+    // Cache the storage instance
+    this.storage = props.storage || window.localStorage;
+
+    const currentURL = this.storageGet('currentURL');
+
+    // Determine the initial query to display.
+    const query =
+      !!props.query ? props.query :
+      !!this.storageGet(`${currentURL}:query`) ? this.storageGet(`${currentURL}:query`) :
+      !!props.defaultQuery ? props.defaultQuery :
+      defaultQuery;
+
+    // Determine the initial variables to display.
+    const variables =
+      !!props.variables ? props.variables :
+      this.storageGet(`${currentURL}:variables`);
+
+    // Initialize state
     this.state = {
-      query: '',
+      schema: props.schema || null,
+      query,
+      variables,
+      response: props.response,
       showMutationsPopup: false,
-      variables: 'null',
-      schema: null,
-      graphQLEndpoint: '',
+      graphQLEndpoint: currentURL,
       urlError: false,
       schemaFetchError: '',
       showQueryStringPopup: false,
@@ -284,21 +318,19 @@ export default class CustomGraphiQL extends Component {
   }
 
   componentDidMount() {
-    const currentURL = window.localStorage.getItem('currentURL');
+    const currentURL = this.state.graphQLEndpoint;
     if (!currentURL) {
       return;
     }
-    // eslint-disable-next-line react/no-direct-mutation-state
-    this.state.graphQLEndpoint = currentURL;
-    const currentURLQuery = window.localStorage.getItem(`${currentURL}:query`);
-    const currentURLVariables = window.localStorage.getItem(`${currentURL}:variables`);
-    // eslint-disable-next-line react/no-did-mount-set-state
-    this.setState({
-      query: currentURLQuery || '',
-      variables: currentURLVariables || '',
-    });
-    this.inputRef && (this.inputRef.value = currentURL);
     this.fetchGraphQLSchema(currentURL);
+  }
+
+  storageGet(name) {
+    return this.storage && this.storage.getItem('cgraphiql' + name);
+  }
+
+  storageSet(name, value) {
+    this.storage && this.storage.setItem('cgraphiql:' + name, value);
   }
 
   @autobind
@@ -854,32 +886,6 @@ export default class CustomGraphiQL extends Component {
     const inputWrapperStyle = this.state.inputFocused ? styles.urlInputWrapperFocused : (this.state.urlError ? styles.urlInputWrapperError : null);
     return (
       <div style={styles.container}>
-        <div style={styles.topBar}>
-          <form>
-            <div
-              style={[styles.urlInputWrapper, inputWrapperStyle]}
-              tabIndex={-1}
-            >
-              <div style={styles.urlInputLabel}>GraphQL Endpoint</div>
-              <input
-                ref={component => component && (this.inputRef = component)}
-                style={styles.urlInput}
-                type={'text'}
-                placeholder={'http://localhost:8080/graphql'}
-                onFocus={() => this.setState({ inputFocused: true, urlError: false })}
-                onBlur={() => this.setState({ inputFocused: false })}
-                onKeyPress={this.onInputKeyPress}
-              />
-            </div>
-          </form>
-          <div
-            className={'shadowButton'}
-            style={[styles.shadowButton, styles.fetchButton]}
-            onClick={this.onFetchButtonPressed}
-          >
-            Fetch
-          </div>
-        </div>
         <GraphiQL
           query={this.state.query}
           variables={this.state.variables}
