@@ -27,7 +27,8 @@
   },
   "homepage": "https://github.com/shahankit/custom-graphiql#readme",
   "dependencies": {
-    "graphiql": "^0.8.0"
+    "graphiql": "^0.8.0",
+    "react-copy-to-clipboard": "^4.2.3"
   },
   "peerDependencies": {
     "graphql": "^0.6.0 || ^0.7.0 || ^0.8.0-b",

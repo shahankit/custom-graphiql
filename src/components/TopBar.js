@@ -20,6 +20,18 @@ export default class TopBar extends Component {
   }
 
   @autobind
+  onInputKeyPress(event) {
+    if (event.which === 13) {
+      this.urlInputRef && this.urlInputRef.blur();
+      this.onFetchButtonPressed();
+      event.preventDefault();
+      return false;
+    }
+
+    return true;
+  }
+
+  @autobind
   onFetchButtonPressed() {
     const url = this.state.inputValue;
     this.props.fetchGraphQLSchema && this.props.fetchGraphQLSchema(url);
@@ -36,12 +48,13 @@ export default class TopBar extends Component {
           >
             <div style={styles.urlInputLabel}>GraphQL Endpoint</div>
             <input
+              ref={component => component && (this.urlInputRef = component)}
               style={styles.urlInput}
               type={'text'}
               value={this.state.inputValue}
               onChange={(event) => this.setState({ inputValue: event.target.value })}
               placeholder={'http://localhost:8080/graphql'}
-              onFocus={() => this.setState({ inputFocused: true })}
+              onFocus={() => this.setState({ inputFocused: true, schemaFetchError: '' })}
               onBlur={() => this.setState({ inputFocused: false })}
               onKeyPress={this.onInputKeyPress}
             />

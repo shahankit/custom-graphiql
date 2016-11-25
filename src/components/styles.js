@@ -6,6 +6,12 @@ module.exports = {
     width: '100%',
     overflow: 'hidden',
   },
+  toolBarButtons: {
+    display: 'flex',
+    flexDirection: 'row',
+  },
+
+  // Common
   shadowButton: {
     padding: '3px 16px',
     fontSize: '14px',
@@ -25,6 +31,67 @@ module.exports = {
     border: '1px solid #d5d5d5',
     borderRadius: '5px',
     fontFamily: 'Helvetica',
+  },
+  toolBarButtonWrapper: {
+    position: 'relative',
+  },
+
+  // GraphiQL menu popup
+  popup: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    zIndex: 100,
+    paddingTop: 5,
+    paddingBottom: 5,
+    marginTop: 2,
+    marginLeft: 5,
+    backgroundColor: '#f8f8f8',
+    backgroundClip: 'padding-box',
+    border: '1px solid rgba(0,0,0,0.15)',
+    borderRadius: 4,
+    boxShadow: '0 3px 12px rgba(0,0,0,0.15)',
+    maxHeight: 385,
+    overflowY: 'auto',
+  },
+
+  // Search bar
+  searchInput: {
+    margin: '8px',
+    padding: '0px 8px',
+    width: '250px',
+    minHeight: '28px',
+    fontSize: '14px',
+    backgroundColor: 'white',
+    color: '#333',
+    verticalAlign: 'middle',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 8px center',
+    border: '1px solid #ddd',
+    borderRadius: '5px',
+    outline: 'none',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075)',
+    fontFamily: 'Helvetica',
+  },
+  searchInputFocused: {
+    border: '1px solid #51a7e8',
+    outline: 'none',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075),0 0 5px rgba(81,167,232,0.5)',
+  },
+
+  // Menu list button
+  menuListButton: {
+    display: 'block',
+    padding: '8px 8px 8px 30px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'Helvetica',
+    borderBottom: '1px solid #eee',
+    backgroundColor: 'white',
+    color: '#666',
   },
 
   // TopBar
@@ -88,5 +155,60 @@ module.exports = {
     borderLeftWidth: 0,
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
+  },
+
+  // Get or Set Query
+  queryStringInput: {
+    margin: '8px',
+    padding: '0px 8px',
+    width: '300px',
+    minHeight: '30px',
+    fontSize: '15px',
+    backgroundColor: 'white',
+    color: '#333',
+    verticalAlign: 'middle',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 8px center',
+    border: '1px solid #ddd',
+    borderRadius: '5px',
+    outline: 'none',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075)',
+  },
+  queryStringInputFocused: {
+    border: '1px solid #51a7e8',
+    outline: 'none',
+    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.075),0 0 5px rgba(81,167,232,0.5)',
+  },
+  queryStringInputButtons: {
+    display: 'flex',
+    flexDirection: 'row',
+    margin: '0px 8px 8px 8px',
+  },
+  copyButton: {
+    minWidth: '70px',
+  },
+  setButton: {
+    marginLeft: '8px',
+    minWidth: '70px',
+  },
+  copiedButton: {
+    color: '#55b230',
+  },
+
+  // Save or Load Query
+  crossButton: {
+    display: 'block',
+    float: 'right',
+    fill: '#ccc',
+    cursor: 'pointer',
+  },
+  saveQueryButton: {
+    padding: '8px',
+    fontSize: '14px',
+    display: 'border-box',
+    cursor: 'pointer',
+  },
+  saveQueryButtonLabel: {
+    fontWeight: '600',
   },
 }
