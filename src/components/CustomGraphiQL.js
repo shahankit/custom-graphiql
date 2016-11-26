@@ -9,6 +9,7 @@ import {
   introspectionQuery,
   GraphQLSchema
 } from 'graphql';
+import fetch from 'isomorphic-fetch';
 import GraphiQL from 'graphiql';
 import { autobind } from 'core-decorators';
 import styles from './styles.js';

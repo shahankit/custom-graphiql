@@ -28,6 +28,7 @@
   "homepage": "https://github.com/shahankit/custom-graphiql#readme",
   "dependencies": {
     "graphiql": "^0.8.0",
+    "isomorphic-fetch": "^2.2.1",
     "react-copy-to-clipboard": "^4.2.3"
   },
   "peerDependencies": {
