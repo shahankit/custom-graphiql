@@ -212,7 +212,7 @@ export default class GenerateMutation extends Component {
       showMutationsPopup: false,
       mutationSearchText: '',
     });
-    this.props.updateQueryAndVariables && this.props.updateQueryAndVariables(prettyQuery, queryVariablesString);
+    this.props.updateQueryVariablesResponse && this.props.updateQueryVariablesResponse(prettyQuery, queryVariablesString);
   }
 
   @autobind

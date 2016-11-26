@@ -74,12 +74,19 @@ export default class CustomGraphiQL extends Component {
     this.fetchGraphQLSchema(currentURL);
   }
 
+  @autobind
   storageGet(name) {
     return this.storage && this.storage.getItem('cgraphiql:' + name);
   }
 
+  @autobind
   storageSet(name, value) {
     this.storage && this.storage.setItem('cgraphiql:' + name, value);
+  }
+
+  @autobind
+  getCurrentResponse() {
+    return this.state.response;
   }
 
   @autobind
@@ -98,12 +105,13 @@ export default class CustomGraphiQL extends Component {
   @autobind
   setQueryFromString(queryStringInput) {
     if (!queryStringInput) {
-      this.updateQueryAndVariables('', '');
+      this.updateQueryVariablesResponse('', '');
       return;
     }
 
     const queryString = getParameterByName('query', queryStringInput) || '{}';
     const variablesString = getParameterByName('variables', queryStringInput) || 'null';
+    const responseString = getParameterByName('response', queryStringInput) || this.state.response;
     const url = new URL(queryStringInput);
     const graphQLEndpoint = url.origin + url.pathname;
     if (graphQLEndpoint !== this.state.graphQLEndpoint) {
@@ -111,17 +119,18 @@ export default class CustomGraphiQL extends Component {
       this.state.graphQLEndpoint = graphQLEndpoint;
     }
 
-    this.updateQueryAndVariables(queryString, variablesString);
+    this.updateQueryVariablesResponse(queryString, variablesString, responseString);
   }
 
   @autobind
-  updateQueryAndVariables(queryString, variablesString) {
+  updateQueryVariablesResponse(queryString, variablesString, responseString) {
     const currentURL = this.state.graphQLEndpoint;
     this.storageSet(`${currentURL}:query`, queryString);
     this.storageSet(`${currentURL}:variables`, variablesString);
     this.setState({
       query: queryString,
-      variables: variablesString
+      variables: variablesString,
+      response: responseString || this.state.response
     });
   }
 
@@ -164,18 +173,27 @@ export default class CustomGraphiQL extends Component {
 
   @autobind
   async graphQLFetcher(graphQLParams) {
-    const graphQLEndpoint = this.state.graphQLEndpoint;
-    const response = await fetch(graphQLEndpoint, {
-      method: 'post',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(graphQLParams),
-      credentials: 'include',
-    });
-    const result = await response.json();
-    return result;
+    try {
+      const graphQLEndpoint = this.state.graphQLEndpoint;
+      const response = await fetch(graphQLEndpoint, {
+        method: 'post',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(graphQLParams),
+        credentials: 'include',
+      });
+      const result = await response.json();
+      this.state.response = JSON.stringify(result, null, 2);
+      return result;
+    } catch (error) {
+      const result = {
+        error: error.toString()
+      };
+      this.state.response = JSON.stringify(result, null, 2);
+      return result;
+    }
   }
 
   @autobind
@@ -231,7 +249,7 @@ export default class CustomGraphiQL extends Component {
             <div style={styles.toolBarButtons}>
               <GenerateMutation
                 schema={this.state.schema}
-                updateQueryAndVariables={this.updateQueryAndVariables}
+                updateQueryVariablesResponse={this.updateQueryVariablesResponse}
               />
               <GetSetQuery
                 query={this.state.query}
@@ -246,6 +264,7 @@ export default class CustomGraphiQL extends Component {
                 getSavedQueries={this.getSavedQueries}
                 setSavedQueries={this.setSavedQueries}
                 setQueryFromString={this.setQueryFromString}
+                getCurrentResponse={this.getCurrentResponse}
               />
             </div>
           </GraphiQL.Toolbar>

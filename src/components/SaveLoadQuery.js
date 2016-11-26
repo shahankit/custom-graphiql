@@ -31,7 +31,9 @@ export default class SaveLoadQuery extends Component {
     const savedQueries = this.props.getSavedQueries ? this.props.getSavedQueries() : {};
     const encodedQuery = encodeURIComponent(this.props.query);
     const encodedVariables = encodeURIComponent(this.props.variables);
-    savedQueries[queryName.replace(' ', '-')] = `${currentURL}?query=${encodedQuery}&variables=${encodedVariables}`;
+    const currentResponse = this.props.getCurrentResponse ? this.props.getCurrentResponse() : '';
+    const encodedResponse = encodeURIComponent(currentResponse);
+    savedQueries[queryName.replace(' ', '-')] = `${currentURL}?query=${encodedQuery}&variables=${encodedVariables}&response=${encodedResponse}`;
     const savedQueriesString = JSON.stringify(savedQueries);
     this.props.setSavedQueries && this.props.setSavedQueries(savedQueriesString);
     this.setState({

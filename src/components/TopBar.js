@@ -51,7 +51,7 @@ export default class TopBar extends Component {
               ref={component => component && (this.urlInputRef = component)}
               style={styles.urlInput}
               type={'text'}
-              value={this.state.inputValue}
+              value={this.state.inputValue || ''}
               onChange={(event) => this.setState({ inputValue: event.target.value })}
               placeholder={'http://localhost:8080/graphql'}
               onFocus={() => this.setState({ inputFocused: true, schemaFetchError: '' })}
