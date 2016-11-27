@@ -173,6 +173,10 @@ export default class CustomGraphiQL extends Component {
   async graphQLFetcher(graphQLParams) {
     try {
       const graphQLEndpoint = this.state.graphQLEndpoint;
+      if (!graphQLEndpoint) {
+        console.warn('Please set a GraphQL endpoint');
+        return null;
+      }
       const response = await fetch(graphQLEndpoint, {
         method: 'post',
         headers: {
@@ -223,6 +227,14 @@ export default class CustomGraphiQL extends Component {
   }
 
   render() {
+    const children = React.Children.toArray(this.props.children);
+
+    const logo = children.find(child => child.type === GraphiQL.Logo);
+    
+    const toolbar = children.find(child => child.type === GraphiQL.Toolbar);
+
+    const footer = children.find(child => child.type === GraphiQL.Footer);
+
     return (
       <div style={styles.container}>
         <TopBar
@@ -231,7 +243,7 @@ export default class CustomGraphiQL extends Component {
           graphQLEndpoint={this.state.graphQLEndpoint}
         />
         <GraphiQL
-          fetcher={this.props.fetcher || this.graphQLFetcher}
+          fetcher={this.graphQLFetcher}
           schema={this.state.schema}
           query={this.state.query}
           variables={this.state.variables}
@@ -264,8 +276,11 @@ export default class CustomGraphiQL extends Component {
                 setQueryFromString={this.setQueryFromString}
                 getCurrentResponse={this.getCurrentResponse}
               />
+              {toolbar}
             </div>
           </GraphiQL.Toolbar>
+          {logo}
+          {footer}
         </GraphiQL>
       </div>
     );
