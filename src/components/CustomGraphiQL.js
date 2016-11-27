@@ -13,8 +13,6 @@ import fetch from 'isomorphic-fetch';
 import GraphiQL from 'graphiql';
 import { autobind } from 'core-decorators';
 import styles from './styles.js';
-import '../css/graphiql.css';
-import '../css/cgraphiql.css';
 import { getParameterByName } from  '../helpers/getParameters';
 import TopBar from './TopBar';
 import GenerateMutation from './GenerateMutation';

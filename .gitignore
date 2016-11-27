@@ -1,21 +1,13 @@
-# See http://help.github.com/ignore-files/ for more about ignoring files.
-
-# dependencies
-node_modules
-
-# testing
-coverage
-
-# production
-build
-
-# misc
+*.swp
+*~
+.*.haste_cache.*
 .DS_Store
-.env
 npm-debug.log
+.env
 
-yarn.lock
-
+node_modules/
+coverage/
 dist/
 /custom-graphiql.js
 /custom-graphiql.min.js
+/custom-graphiql.css

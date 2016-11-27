@@ -14,4 +14,5 @@ module.exports = {
   appSrc: resolveApp('src'),
   appNodeModules: resolveApp('node_modules'),
   appContainerJs: resolveApp('server/app.js'),
+  appCss: resolveApp('css'),
 };
