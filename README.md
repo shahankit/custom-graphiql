@@ -33,9 +33,9 @@ thie repository for how to setup CustomGraphiQL on any endpoint of your express 
 
 ### Features
 
-* Generate stub mutation by scanning you schema.
+* Generates stub mutation by scanning you schema.
 * Save your queries to browser localStorage so that they can be replayed later.
-* Share current query using Get / Set query button.
+* Share current query using Get or Set query button.
 
 
 ### Usage
@@ -49,5 +49,5 @@ import CustomGraphiQL from 'custom-graphiql';
 ```
 
 CustomGraphiQL supports all the props and children accepted by GraphiQL. Check 
-[here](https://github.com/graphql/graphiql#usage) for description of available
- props and children and their example usage.
+[here](https://github.com/graphql/graphiql#usage) for description of available 
+props and children and their example usage.
