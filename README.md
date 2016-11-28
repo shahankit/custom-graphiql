@@ -6,6 +6,8 @@ which offers more utility button and a component which allows to query any graph
 endpoint. Inspired from [graphiql-app](https://github.com/skevy/graphiql-app/) 
 but within browser without requirement for an app.
 
+[![npm version](https://badge.fury.io/js/custom-graphiql.svg)](https://badge.fury.io/js/custom-graphiql)
+
 ![](resources/cgraphiql.gif)
 
 ![](resources/cgraphiql2.png)
