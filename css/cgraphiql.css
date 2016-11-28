@@ -18,3 +18,17 @@
   background-color: #4078c0 !important;
   color: white !important;
 }
+
+.editModalInput:focus {
+  outline: none;
+  border-bottom-color: #4078c0 !important;
+}
+
+.editModalInputWrapper:hover {
+  background-color: #FAFAFA !important;
+}
+
+.editModalFormItemDelete:hover {
+  fill: #4078c0 !important;
+  background-color: #DEDEDE !important;
+}

@@ -67,6 +67,13 @@ export default class TopBar extends Component {
         >
           Fetch
         </div>
+        <div
+          className={'shadowButton'}
+          style={{...styles.shadowButton, ...styles.editHeadersButton}}
+          onClick={this.props.onEditHeadersButtonPressed}
+        >
+          Edit HTTP headers ({Object.keys(this.props.headers).length})
+        </div>
       </div>
     );
   }

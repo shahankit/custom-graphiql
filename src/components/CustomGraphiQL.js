@@ -18,6 +18,7 @@ import TopBar from './TopBar';
 import GenerateMutation from './GenerateMutation';
 import GetSetQuery from './GetSetQuery';
 import SaveLoadQuery from './SaveLoadQuery';
+import EditHeaderModal from './EditHeaderModal';
 
 export default class CustomGraphiQL extends Component {
   static propTypes = {
@@ -53,6 +54,8 @@ export default class CustomGraphiQL extends Component {
     // Determine the initial variables to display.
     const variables = props.variables || this.storageGet(`${currentURL}:variables`);
 
+    const headers = this.storageGet('headers') ? JSON.parse(this.storageGet('headers')) : {};
+
     // Initialize state
     this.state = {
       schema: props.schema || null,
@@ -60,7 +63,8 @@ export default class CustomGraphiQL extends Component {
       variables,
       response: props.response,
       graphQLEndpoint: currentURL,
-      schemaFetchError: ''
+      schemaFetchError: '',
+      headers,
     };
   }
 
@@ -135,11 +139,13 @@ export default class CustomGraphiQL extends Component {
   @autobind
   async fetchGraphQLSchema(url) {
     try {
+      const headers = this.state.headers;
       const graphQLParams = { query: introspectionQuery };
       const response = await fetch(url, {
         method: 'post',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...headers
         },
         body: JSON.stringify(graphQLParams)
       });
@@ -199,6 +205,29 @@ export default class CustomGraphiQL extends Component {
   }
 
   @autobind
+  updateHeaders(newHeaders) {
+    this.storageSet('headers', JSON.stringify(newHeaders));
+    this.setState({
+      headers: newHeaders,
+      editHeaderModalVisible: false,
+    });
+  }
+
+  @autobind
+  hideEditHeaderModal() {
+    this.setState({
+      editHeaderModalVisible: false
+    });
+  }
+
+  @autobind
+  showEditHeaderModal() {
+    this.setState({
+      editHeaderModalVisible: true
+    });
+  }
+
+  @autobind
   onEditQuery(queryString) {
     this.setState({
       query: queryString
@@ -241,6 +270,8 @@ export default class CustomGraphiQL extends Component {
           schemaFetchError={this.state.schemaFetchError}
           fetchGraphQLSchema={this.fetchGraphQLSchema}
           graphQLEndpoint={this.state.graphQLEndpoint}
+          headers={this.state.headers}
+          onEditHeadersButtonPressed={this.showEditHeaderModal}
         />
         <GraphiQL
           fetcher={this.graphQLFetcher}
@@ -282,6 +313,19 @@ export default class CustomGraphiQL extends Component {
           {logo}
           {footer}
         </GraphiQL>
+        {(() => {
+          if (!this.state.editHeaderModalVisible) {
+            return null;
+          }
+
+          return (
+            <EditHeaderModal
+              headers={this.state.headers}
+              updateHeaders={this.updateHeaders}
+              hideEditHeaderModal={this.hideEditHeaderModal}
+            />
+          );
+        })()}
       </div>
     );
   }

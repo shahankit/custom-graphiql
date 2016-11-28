@@ -156,6 +156,9 @@ module.exports = {
     borderTopLeftRadius: 0,
     borderBottomLeftRadius: 0,
   },
+  editHeadersButton: {
+    marginLeft: '30px'
+  },
 
   // Get or Set Query
   queryStringInput: {
@@ -210,5 +213,98 @@ module.exports = {
   },
   saveQueryButtonLabel: {
     fontWeight: '600',
+  },
+
+  // EditHeaderModal
+  editHeaderModalContainer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 1000,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    padding: '60px 0px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  editHeaderModal: {
+    boxShadow: '0 5px 15px rgba(0,0,0,.5)',
+    backgroundColor: 'white',
+    border: '1px solid rgba(0,0,0,.2)',
+    borderRadius: '3px',
+    outline: 0,
+    padding: '15px 20px',
+    width: '50%',
+  },
+  editModalButtonsWrapper: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    paddingTop: '20px',
+  },
+  editHeaderModalSaveButton: {
+    marginLeft: '25px',
+  },
+  editModalFormItem: {
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'row',
+    marginBottom: '3px',
+  },
+  editModalInputWrapper: {
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'row',
+    borderRadius: '3px 0px 0px 3px',
+  },
+  editModalInput: {
+    width: 'calc(50% - 10px)',
+    height: '30px',
+    backgroundColor: 'transparent',
+    fontSize: '14px',
+    borderBottom: '1px solid #F0F0F0',
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    padding: '10px',
+    color: '#505050',
+    fontFamily: 'Helvetica',
+    boxSizing: 'border-box',
+    lineHeight: 'normal',
+    margin: '0',
+  },
+  editModelValueInput: {
+    marginLeft: '10px',
+  },
+  editModelKeyInput: {
+    marginRight: '10px',
+  },
+  editModalFormItemDelete: {
+    width: '30px',
+    height: '30px',
+    backgroundColor: '#FAFAFA',
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    fill: '#B4B4B4',
+    cursor: 'pointer',
+    borderRadius: '3px',
+    marginLeft: '3px',
+  },
+  editModalFormItemDeleteStub: {
+    width: '30px',
+    height: '30px',
+    marginLeft: '3px',
+    backgroundColor: 'transparent',
+  },
+  editHeaderModelTitle: {
+    fontSize: '14px',
+    lineHeight: '20px',
+    fontWeight: 600,
+    color: '#333',
+    fontFamily: 'Helvetica',
+    marginBottom: '10px',
   },
 }

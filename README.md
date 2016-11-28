@@ -48,7 +48,7 @@ import CustomGraphiQL from 'custom-graphiql';
 <CustomGraphiQL />
 ```
 
-CustomGraphiQL supports all the props and children accepted by GraphiQL except the
-`fetcher` prop. The fetch function is implemented within the component and hence no 
+CustomGraphiQL supports all the props and children accepted by GraphiQL **except the
+`fetcher` prop**. The fetch function is implemented within the component and hence no 
 fetcher props is required for CustomGraphiQL component. Check [here](https://github.com/graphql/graphiql#usage) 
 for description of available props and children and their example usage.
