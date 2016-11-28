@@ -1,6 +1,6 @@
 {
   "name": "custom-graphiql",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GraphiQL IDE with extra option for creating stub mutation and save queries to localStorage",
   "main": "dist/index.js",
   "scripts": {
