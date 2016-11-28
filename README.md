@@ -6,7 +6,9 @@ which offers more utility button and a component which allows to query any graph
 endpoint. Inspired from [graphiql-app](https://github.com/skevy/graphiql-app/) 
 but within browswer without requirement for an app.
 
-![](resources/cgraphiql.png)
+![](resources/cgraphiql.gif)
+
+![](resources/cgraphiql2.png)
 
 ### Getting started
 
