@@ -4,7 +4,7 @@ CustomGraphiQL
 A custom wrapper around [graphiql](https://github.com/graphql/graphiql/) package 
 which offers more utility button and a component which allows to query any graphql 
 endpoint. Inspired from [graphiql-app](https://github.com/skevy/graphiql-app/) 
-but within browswer without requirement for an app.
+but within browser without requirement for an app.
 
 ![](resources/cgraphiql.gif)
 
