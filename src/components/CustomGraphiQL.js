@@ -178,6 +178,7 @@ export default class CustomGraphiQL extends Component {
   @autobind
   async graphQLFetcher(graphQLParams) {
     try {
+      const headers = this.state.headers;
       const graphQLEndpoint = this.state.graphQLEndpoint;
       if (!graphQLEndpoint) {
         console.warn('Please set a GraphQL endpoint');
@@ -187,7 +188,8 @@ export default class CustomGraphiQL extends Component {
         method: 'post',
         headers: {
           Accept: 'application/json',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...headers
         },
         body: JSON.stringify(graphQLParams),
         credentials: 'include',
