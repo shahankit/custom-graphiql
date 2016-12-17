@@ -58,14 +58,16 @@ export default class GenerateMutation extends Component {
     const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
 
     if (this.isScalar(typeConstructorName)) {
-      return basicTypesDefaultValues[type.name];
+      const defaultValue = basicTypesDefaultValues[type.name];
+      return defaultValue === undefined ? null : defaultValue;
     }
 
     if (this.isScalar(ofTypeConstructorName)) {
+      const defaultValue = basicTypesDefaultValues[ofType.name];
       if (this.isList(typeConstructorName)) {
-        return [basicTypesDefaultValues[ofType.name]];
+        return [defaultValue === undefined ? null : defaultValue];
       }
-      return basicTypesDefaultValues[ofType.name];
+      return defaultValue === undefined ? null : defaultValue;
     }
 
     if (this.isEnum(typeConstructorName)) {
