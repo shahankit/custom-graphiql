@@ -47,6 +47,10 @@ export default class GenerateMutation extends Component {
     return x === 'GraphQLInputObjectType' || x === 'GraphQLObjectType';
   }
 
+  isUnionType(x) {
+    return x === 'GraphQLUnionType';
+  }
+
   generateInputObject(graphqlObject) {
     const type = graphqlObject.type;
     const typeConstructorName = type.constructor.name;
@@ -118,6 +122,17 @@ export default class GenerateMutation extends Component {
       const complexFieldKey = Object.keys(fields).sort()[0];
       const complexField = fields[complexFieldKey];
       return `{ ${this.generateOutputObjectString(complexField)} }`;
+    }
+
+    if (this.isUnionType(typeConstructorName) || this.isUnionType(ofTypeConstructorName)) {
+      const unionTypes = type.getTypes();
+      const subSelectionStringArray = unionTypes.map(item => {
+        const wrapperObject = { type: item };
+        const itemSubSelectionString = this.getSubSelectionString(wrapperObject);
+        const unionTypeName = item.name;
+        return `... on ${unionTypeName} ${itemSubSelectionString}`;
+      });
+      return `{ ${subSelectionStringArray.join('\n')} }`;
     }
 
     return '';
