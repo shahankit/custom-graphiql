@@ -8,6 +8,8 @@ but within browser without requirement for an app.
 
 [![npm version](https://badge.fury.io/js/custom-graphiql.svg)](https://badge.fury.io/js/custom-graphiql)
 
+Try it out here: https://shahankit.github.io/custom-graphiql/
+
 ![](resources/cgraphiql.gif)
 
 ![](resources/cgraphiql2.png)
