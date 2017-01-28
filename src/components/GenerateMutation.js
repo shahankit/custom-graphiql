@@ -4,8 +4,8 @@ import {
   print,
   parse
 } from 'graphql';
-import styles from './styles';
 import { autobind } from 'core-decorators';
+import styles from './styles';
 import JSON2_MOD from '../helpers/json2-mod';
 
 const basicTypesDefaultValues = {
@@ -171,7 +171,6 @@ export default class GenerateMutation extends Component {
     const mutationArgs = mutation.args;
 
     const queryVariables = [];
-
     const inputs = mutationArgs.map((mutationArg, index) => {
       const type = mutationArg.type;
       const typeConstructorName = type.constructor.name;
@@ -208,18 +207,24 @@ export default class GenerateMutation extends Component {
       return previousValue;
     }, {});
 
-    const outputFields = mutation.type.getFields();
-    const outputStrings = Object.keys(outputFields).map((fieldKey) => {
-      const outputField = outputFields[fieldKey];
-      return `${this.generateOutputObjectString(outputField)}`;
-    });
-    const outputString = outputStrings.join(',');
+    const outputType = mutation.type;
+    const outputOfType = outputType.ofType;
+    const outputTypeConstructorName = outputType.constructor.name;
+    const outputOfTypeConstructorName = outputOfType ? outputOfType.constructor.name : '';
+    const isScalarOutputType = this.isScalar(outputTypeConstructorName) || this.isScalar(outputOfTypeConstructorName);
+    let outputString = '';
+    if (!isScalarOutputType) {
+      const outputFields = outputType.getFields();
+      const outputStrings = Object.keys(outputFields).map((fieldKey) => {
+        const outputField = outputFields[fieldKey];
+        return `${this.generateOutputObjectString(outputField)}`;
+      });
+      outputString = `{ ${outputStrings.join(',')} }`;
+    }
 
     const queryString = `
       mutation ${mutationName}Mutation${mutationInputString} {
-        ${mutationName}${inputString} {
-          ${outputString}
-        }
+        ${mutationName}${inputString} ${outputString}
       }
     `;
     const prettyQuery = print(parse(queryString));
