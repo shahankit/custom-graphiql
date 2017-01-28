@@ -127,8 +127,8 @@ export default class GenerateMutation extends Component {
     }
 
     if (this.isUnionType(typeConstructorName) || this.isUnionType(ofTypeConstructorName)) {
-      const unionTypes = type.getTypes();
-      const subSelectionStringArray = unionTypes.map(item => {
+      const unionTypes = this.isUnionType(typeConstructorName) ? type.getTypes() : ofType.getTypes();
+      const subSelectionStringArray = unionTypes.map((item) => {
         const wrapperObject = { type: item };
         const itemSubSelectionString = this.getSubSelectionString(wrapperObject);
         const unionTypeName = item.name;
@@ -177,7 +177,6 @@ export default class GenerateMutation extends Component {
       const ofType = type.ofType;
       const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
 
-      debugger;
       const isBasicType = this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName);
       const valueObject = this.generateInputObject(mutationArg);
 
