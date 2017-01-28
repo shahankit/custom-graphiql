@@ -12,7 +12,7 @@ const basicTypesDefaultValues = {
   Float: 0.0,
   ID: '',
   Int: 0,
-  String: '',
+  String: '""',
   Boolean: false,
 };
 
