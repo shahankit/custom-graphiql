@@ -905,11 +905,11 @@ var _graphiql2 = _interopRequireDefault(_graphiql);
 
 var _graphql = require('graphql');
 
+var _coreDecorators = require('core-decorators');
+
 var _styles = require('./styles');
 
 var _styles2 = _interopRequireDefault(_styles);
-
-var _coreDecorators = require('core-decorators');
 
 var _json2Mod = require('../helpers/json2-mod');
 
@@ -1103,7 +1103,7 @@ var GenerateMutation = (_class = function (_Component) {
       }
 
       if (this.isUnionType(typeConstructorName) || this.isUnionType(ofTypeConstructorName)) {
-        var unionTypes = type.getTypes();
+        var unionTypes = this.isUnionType(typeConstructorName) ? type.getTypes() : ofType.getTypes();
         var subSelectionStringArray = unionTypes.map(function (item) {
           var wrapperObject = { type: item };
           var itemSubSelectionString = _this3.getSubSelectionString(wrapperObject);
@@ -1130,7 +1130,7 @@ var GenerateMutation = (_class = function (_Component) {
         var isBasicType = _this4.isScalar(typeConstructorName) || _this4.isScalar(ofTypeConstructorName);
 
         var valueObject = _this4.generateInputObject(item);
-        var valueObjectString = isBasicType ? valueObject : _json2Mod2.default.stringify(valueObject, null, '', true);
+        var valueObjectString = isBasicType ? JSON.stringify(valueObject) : _json2Mod2.default.stringify(valueObject, null, '', true);
         return item.name + ': ' + valueObjectString;
       });
       var argsString = argsStringArray.join(',');
@@ -1152,7 +1152,6 @@ var GenerateMutation = (_class = function (_Component) {
       var mutationArgs = mutation.args;
 
       var queryVariables = [];
-
       var inputs = mutationArgs.map(function (mutationArg, index) {
         var type = mutationArg.type;
         var typeConstructorName = type.constructor.name;
@@ -1160,7 +1159,6 @@ var GenerateMutation = (_class = function (_Component) {
         var ofTypeConstructorName = ofType ? ofType.constructor.name : '';
 
         var isBasicType = _this5.isScalar(typeConstructorName) || _this5.isScalar(ofTypeConstructorName);
-
         var valueObject = _this5.generateInputObject(mutationArg);
 
         if (!isBasicType) {
@@ -1171,7 +1169,7 @@ var GenerateMutation = (_class = function (_Component) {
           });
         }
 
-        var valueObjectString = isBasicType ? valueObject : '$input_' + index;
+        var valueObjectString = isBasicType ? JSON.stringify(valueObject) : '$input_' + index;
         return mutationArg.name + ': ' + valueObjectString;
       });
       var inputString = inputs.join(',');
@@ -1191,14 +1189,24 @@ var GenerateMutation = (_class = function (_Component) {
         return previousValue;
       }, {});
 
-      var outputFields = mutation.type.getFields();
-      var outputStrings = Object.keys(outputFields).map(function (fieldKey) {
-        var outputField = outputFields[fieldKey];
-        return '' + _this5.generateOutputObjectString(outputField);
-      });
-      var outputString = outputStrings.join(',');
+      var outputType = mutation.type;
+      var outputOfType = outputType.ofType;
+      var outputTypeConstructorName = outputType.constructor.name;
+      var outputOfTypeConstructorName = outputOfType ? outputOfType.constructor.name : '';
+      var isScalarOutputType = this.isScalar(outputTypeConstructorName) || this.isScalar(outputOfTypeConstructorName);
+      var outputString = '';
+      if (!isScalarOutputType) {
+        (function () {
+          var outputFields = outputType.getFields();
+          var outputStrings = Object.keys(outputFields).map(function (fieldKey) {
+            var outputField = outputFields[fieldKey];
+            return '' + _this5.generateOutputObjectString(outputField);
+          });
+          outputString = '{ ' + outputStrings.join(',') + ' }';
+        })();
+      }
 
-      var queryString = '\n      mutation ' + mutationName + 'Mutation' + mutationInputString + ' {\n        ' + mutationName + inputString + ' {\n          ' + outputString + '\n        }\n      }\n    ';
+      var queryString = '\n      mutation ' + mutationName + 'Mutation' + mutationInputString + ' {\n        ' + mutationName + inputString + ' ' + outputString + '\n      }\n    ';
       var prettyQuery = (0, _graphql.print)((0, _graphql.parse)(queryString));
       var queryVariablesString = JSON.stringify(queryVariablesObject, null, '  ');
 

@@ -8,7 +8,8 @@
     "lint": "eslint src",
     "dev": "node server/server.js",
     "prepublish": ". ./resources/prepublish.sh",
-    "preversion": ". ./resources/checkgit.sh"
+    "preversion": ". ./resources/checkgit.sh",
+    "update-website": ". ./resources/updateWebsite.sh"
   },
   "repository": {
     "type": "git",
