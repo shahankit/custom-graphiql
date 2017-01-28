@@ -177,8 +177,8 @@ export default class GenerateMutation extends Component {
       const ofType = type.ofType;
       const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
 
+      debugger;
       const isBasicType = this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName);
-
       const valueObject = this.generateInputObject(mutationArg);
 
       if (!isBasicType) {
@@ -189,7 +189,7 @@ export default class GenerateMutation extends Component {
         });
       }
 
-      const valueObjectString = isBasicType ? valueObject : ('$input_' + index);
+      const valueObjectString = isBasicType ? JSON.stringify(valueObject) : ('$input_' + index);
       return `${mutationArg.name}: ${valueObjectString}`;
     });
     let inputString = inputs.join(',');
