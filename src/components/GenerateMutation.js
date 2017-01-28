@@ -151,7 +151,7 @@ export default class GenerateMutation extends Component {
       const isBasicType = this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName);
 
       const valueObject = this.generateInputObject(item);
-      const valueObjectString = isBasicType ? valueObject : JSON2_MOD.stringify(valueObject, null, '', true);
+      const valueObjectString = isBasicType ? JSON.stringify(valueObject) : JSON2_MOD.stringify(valueObject, null, '', true);
       return `${item.name}: ${valueObjectString}`;
     });
     let argsString = argsStringArray.join(',');
