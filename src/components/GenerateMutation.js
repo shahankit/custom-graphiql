@@ -4,7 +4,6 @@ import {
   print,
   parse
 } from 'graphql';
-import { autobind } from 'core-decorators';
 import styles from './styles';
 import JSON2_MOD from '../helpers/json2-mod';
 
@@ -24,6 +23,31 @@ export default class GenerateMutation extends Component {
       showMutationsPopup: false,
       mutationSearchText: '',
       mutationSearchInputFocused: false
+    };
+  }
+
+  getPrimaryAndSecondaryType(graphqlObject) {
+    let type = graphqlObject.type;
+    let typeConstructorName = type.constructor.name;
+
+    if (this.isNonNull(typeConstructorName)) {
+      type = type.ofType;
+      typeConstructorName = type ? type.constructor.name : '';
+    }
+
+    let ofType = type.ofType;
+    let ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+
+    if (this.isNonNull(ofTypeConstructorName)) {
+      ofType = ofType.ofType;
+      ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+    }
+
+    return {
+      primaryType: type,
+      primaryTypeConstructorName: typeConstructorName,
+      secondaryType: ofType,
+      secondaryTypeConstructorName: ofTypeConstructorName
     };
   }
 
@@ -52,40 +76,42 @@ export default class GenerateMutation extends Component {
   }
 
   generateInputObject(graphqlObject) {
-    const type = graphqlObject.type;
-    const typeConstructorName = type.constructor.name;
-    const ofType = type.ofType;
-    const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+    const {
+      primaryType,
+      primaryTypeConstructorName,
+      secondaryType,
+      secondaryTypeConstructorName
+    } = this.getPrimaryAndSecondaryType(graphqlObject);
 
-    if (this.isScalar(typeConstructorName)) {
-      const defaultValue = basicTypesDefaultValues[type.name];
+    if (this.isScalar(primaryTypeConstructorName)) {
+      const defaultValue = basicTypesDefaultValues[primaryType.name];
       return defaultValue === undefined ? null : defaultValue;
     }
 
-    if (this.isScalar(ofTypeConstructorName)) {
-      const defaultValue = basicTypesDefaultValues[ofType.name];
-      if (this.isList(typeConstructorName)) {
+    if (this.isScalar(secondaryTypeConstructorName)) {
+      const defaultValue = basicTypesDefaultValues[secondaryType.name];
+      if (this.isList(primaryTypeConstructorName)) {
         return [defaultValue === undefined ? null : defaultValue];
       }
       return defaultValue === undefined ? null : defaultValue;
     }
 
-    if (this.isEnum(typeConstructorName)) {
-      return type.getValues()[0].value;
+    if (this.isEnum(primaryTypeConstructorName)) {
+      return primaryType.getValues()[0].value;
     }
 
-    if (this.isEnum(ofTypeConstructorName)) {
-      if (this.isList(typeConstructorName)) {
-        return [ofType.getValues()[0].value];
+    if (this.isEnum(secondaryTypeConstructorName)) {
+      if (this.isList(primaryTypeConstructorName)) {
+        return [secondaryType.getValues()[0].value];
       }
-      return ofType.getValues()[0].value;
+      return secondaryType.getValues()[0].value;
     }
 
-    if (this.isObjectType(ofTypeConstructorName) || this.isObjectType(typeConstructorName)) {
-      const fields = ofType ? ofType.getFields() : type.getFields();
+    if (this.isObjectType(secondaryTypeConstructorName) || this.isObjectType(primaryTypeConstructorName)) {
+      const fields = secondaryType ? secondaryType.getFields() : primaryType.getFields();
       const fieldsInputObject = {};
       Object.keys(fields).forEach(fieldKey => (fieldsInputObject[fieldKey] = this.generateInputObject(fields[fieldKey])));
-      if (this.isList(typeConstructorName)) {
+      if (this.isList(primaryTypeConstructorName)) {
         return [fieldsInputObject];
       }
       return fieldsInputObject;
@@ -164,8 +190,7 @@ export default class GenerateMutation extends Component {
     return `${graphqlObject.name} ${argsString} ${subSelectionString}`;
   }
 
-  @autobind
-  mutationPressed(mutationName) {
+  mutationPressed = (mutationName) => {
     const mutationFields = this.props.schema.getMutationType().getFields();
     const mutation = mutationFields[mutationName];
     const mutationArgs = mutation.args;
@@ -227,7 +252,7 @@ export default class GenerateMutation extends Component {
       }
     `;
     const prettyQuery = print(parse(queryString));
-    const queryVariablesString = JSON.stringify(queryVariablesObject, null, '  ');
+    const queryVariablesString = JSON.stringify(queryVariablesObject, null, 2);
 
     this.setState({
       showMutationsPopup: false,
@@ -236,8 +261,7 @@ export default class GenerateMutation extends Component {
     this.props.updateQueryVariablesResponse && this.props.updateQueryVariablesResponse(prettyQuery, queryVariablesString);
   }
 
-  @autobind
-  generateMutationPressed() {
+  generateMutationPressed = () => {
     this.setState({
       showMutationsPopup: !this.state.showMutationsPopup
     });
