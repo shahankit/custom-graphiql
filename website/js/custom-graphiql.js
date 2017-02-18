@@ -893,8 +893,6 @@ var _inherits2 = require('babel-runtime/helpers/inherits');
 
 var _inherits3 = _interopRequireDefault(_inherits2);
 
-var _desc, _value, _class;
-
 var _react = (typeof window !== "undefined" ? window['React'] : typeof global !== "undefined" ? global['React'] : null);
 
 var _react2 = _interopRequireDefault(_react);
@@ -904,8 +902,6 @@ var _graphiql = require('graphiql');
 var _graphiql2 = _interopRequireDefault(_graphiql);
 
 var _graphql = require('graphql');
-
-var _coreDecorators = require('core-decorators');
 
 var _styles = require('./styles');
 
@@ -917,35 +913,6 @@ var _json2Mod2 = _interopRequireDefault(_json2Mod);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
-  var desc = {};
-  Object['ke' + 'ys'](descriptor).forEach(function (key) {
-    desc[key] = descriptor[key];
-  });
-  desc.enumerable = !!desc.enumerable;
-  desc.configurable = !!desc.configurable;
-
-  if ('value' in desc || desc.initializer) {
-    desc.writable = true;
-  }
-
-  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
-    return decorator(target, property, desc) || desc;
-  }, desc);
-
-  if (context && desc.initializer !== void 0) {
-    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
-    desc.initializer = undefined;
-  }
-
-  if (desc.initializer === void 0) {
-    Object['define' + 'Property'](target, property, desc);
-    desc = null;
-  }
-
-  return desc;
-}
-
 var basicTypesDefaultValues = {
   Float: 0.0,
   ID: '',
@@ -954,13 +921,90 @@ var basicTypesDefaultValues = {
   Boolean: false
 };
 
-var GenerateMutation = (_class = function (_Component) {
+var GenerateMutation = function (_Component) {
   (0, _inherits3.default)(GenerateMutation, _Component);
 
   function GenerateMutation(props) {
     (0, _classCallCheck3.default)(this, GenerateMutation);
 
     var _this = (0, _possibleConstructorReturn3.default)(this, (GenerateMutation.__proto__ || Object.getPrototypeOf(GenerateMutation)).call(this, props));
+
+    _this.mutationPressed = function (mutationName) {
+      var mutationFields = _this.props.schema.getMutationType().getFields();
+      var mutation = mutationFields[mutationName];
+      var mutationArgs = mutation.args;
+
+      var queryVariables = [];
+      var inputs = mutationArgs.map(function (mutationArg, index) {
+        var type = mutationArg.type;
+        var typeConstructorName = type.constructor.name;
+        var ofType = type.ofType;
+        var ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+
+        var isBasicType = _this.isScalar(typeConstructorName) || _this.isScalar(ofTypeConstructorName);
+        var valueObject = _this.generateInputObject(mutationArg);
+
+        if (!isBasicType) {
+          queryVariables.push({
+            name: '$input_' + index,
+            type: ofType ? ofType.name : type.name,
+            value: valueObject
+          });
+        }
+
+        var valueObjectString = isBasicType ? JSON.stringify(valueObject) : '$input_' + index;
+        return mutationArg.name + ': ' + valueObjectString;
+      });
+      var inputString = inputs.join(',');
+      if (inputString) {
+        inputString = '(' + inputString + ')';
+      }
+
+      var mutationInputString = queryVariables.map(function (item) {
+        return item.name + ': ' + item.type + '!';
+      }).join(',');
+      if (mutationInputString) {
+        mutationInputString = '(' + mutationInputString + ')';
+      }
+
+      var queryVariablesObject = queryVariables.reduce(function (previousValue, currentValue) {
+        previousValue[currentValue.name.slice(1)] = currentValue.value;
+        return previousValue;
+      }, {});
+
+      var outputType = mutation.type;
+      var outputOfType = outputType.ofType;
+      var outputTypeConstructorName = outputType.constructor.name;
+      var outputOfTypeConstructorName = outputOfType ? outputOfType.constructor.name : '';
+      var isScalarOutputType = _this.isScalar(outputTypeConstructorName) || _this.isScalar(outputOfTypeConstructorName);
+      var outputString = '';
+      if (!isScalarOutputType) {
+        (function () {
+          var outputFields = outputType.getFields();
+          var outputStrings = Object.keys(outputFields).map(function (fieldKey) {
+            var outputField = outputFields[fieldKey];
+            return '' + _this.generateOutputObjectString(outputField);
+          });
+          outputString = '{ ' + outputStrings.join(',') + ' }';
+        })();
+      }
+
+      var queryString = '\n      mutation ' + mutationName + 'Mutation' + mutationInputString + ' {\n        ' + mutationName + inputString + ' ' + outputString + '\n      }\n    ';
+      var prettyQuery = (0, _graphql.print)((0, _graphql.parse)(queryString));
+      var queryVariablesString = JSON.stringify(queryVariablesObject, null, 2);
+
+      _this.setState({
+        showMutationsPopup: false,
+        mutationSearchText: ''
+      });
+      _this.props.updateQueryVariablesResponse && _this.props.updateQueryVariablesResponse(prettyQuery, queryVariablesString);
+    };
+
+    _this.generateMutationPressed = function () {
+      _this.setState({
+        showMutationsPopup: !_this.state.showMutationsPopup
+      });
+    };
 
     _this.state = {
       showMutationsPopup: false,
@@ -971,6 +1015,32 @@ var GenerateMutation = (_class = function (_Component) {
   }
 
   (0, _createClass3.default)(GenerateMutation, [{
+    key: 'getPrimaryAndSecondaryType',
+    value: function getPrimaryAndSecondaryType(graphqlObject) {
+      var type = graphqlObject.type;
+      var typeConstructorName = type.constructor.name;
+
+      if (this.isNonNull(typeConstructorName)) {
+        type = type.ofType;
+        typeConstructorName = type ? type.constructor.name : '';
+      }
+
+      var ofType = type.ofType;
+      var ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+
+      if (this.isNonNull(ofTypeConstructorName)) {
+        ofType = ofType.ofType;
+        ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+      }
+
+      return {
+        primaryType: type,
+        primaryTypeConstructorName: typeConstructorName,
+        secondaryType: ofType,
+        secondaryTypeConstructorName: ofTypeConstructorName
+      };
+    }
+  }, {
     key: 'isScalar',
     value: function isScalar(x) {
       return x === 'GraphQLScalarType';
@@ -1005,43 +1075,44 @@ var GenerateMutation = (_class = function (_Component) {
     value: function generateInputObject(graphqlObject) {
       var _this2 = this;
 
-      var type = graphqlObject.type;
-      var typeConstructorName = type.constructor.name;
-      var ofType = type.ofType;
-      var ofTypeConstructorName = ofType ? ofType.constructor.name : '';
+      var _getPrimaryAndSeconda = this.getPrimaryAndSecondaryType(graphqlObject),
+          primaryType = _getPrimaryAndSeconda.primaryType,
+          primaryTypeConstructorName = _getPrimaryAndSeconda.primaryTypeConstructorName,
+          secondaryType = _getPrimaryAndSeconda.secondaryType,
+          secondaryTypeConstructorName = _getPrimaryAndSeconda.secondaryTypeConstructorName;
 
-      if (this.isScalar(typeConstructorName)) {
-        var defaultValue = basicTypesDefaultValues[type.name];
+      if (this.isScalar(primaryTypeConstructorName)) {
+        var defaultValue = basicTypesDefaultValues[primaryType.name];
         return defaultValue === undefined ? null : defaultValue;
       }
 
-      if (this.isScalar(ofTypeConstructorName)) {
-        var _defaultValue = basicTypesDefaultValues[ofType.name];
-        if (this.isList(typeConstructorName)) {
+      if (this.isScalar(secondaryTypeConstructorName)) {
+        var _defaultValue = basicTypesDefaultValues[secondaryType.name];
+        if (this.isList(primaryTypeConstructorName)) {
           return [_defaultValue === undefined ? null : _defaultValue];
         }
         return _defaultValue === undefined ? null : _defaultValue;
       }
 
-      if (this.isEnum(typeConstructorName)) {
-        return type.getValues()[0].value;
+      if (this.isEnum(primaryTypeConstructorName)) {
+        return primaryType.getValues()[0].value;
       }
 
-      if (this.isEnum(ofTypeConstructorName)) {
-        if (this.isList(typeConstructorName)) {
-          return [ofType.getValues()[0].value];
+      if (this.isEnum(secondaryTypeConstructorName)) {
+        if (this.isList(primaryTypeConstructorName)) {
+          return [secondaryType.getValues()[0].value];
         }
-        return ofType.getValues()[0].value;
+        return secondaryType.getValues()[0].value;
       }
 
-      if (this.isObjectType(ofTypeConstructorName) || this.isObjectType(typeConstructorName)) {
-        var _ret = function () {
-          var fields = ofType ? ofType.getFields() : type.getFields();
+      if (this.isObjectType(secondaryTypeConstructorName) || this.isObjectType(primaryTypeConstructorName)) {
+        var _ret2 = function () {
+          var fields = secondaryType ? secondaryType.getFields() : primaryType.getFields();
           var fieldsInputObject = {};
           Object.keys(fields).forEach(function (fieldKey) {
             return fieldsInputObject[fieldKey] = _this2.generateInputObject(fields[fieldKey]);
           });
-          if (_this2.isList(typeConstructorName)) {
+          if (_this2.isList(primaryTypeConstructorName)) {
             return {
               v: [fieldsInputObject]
             };
@@ -1051,7 +1122,7 @@ var GenerateMutation = (_class = function (_Component) {
           };
         }();
 
-        if ((typeof _ret === 'undefined' ? 'undefined' : (0, _typeof3.default)(_ret)) === "object") return _ret.v;
+        if ((typeof _ret2 === 'undefined' ? 'undefined' : (0, _typeof3.default)(_ret2)) === "object") return _ret2.v;
       }
 
       return '';
@@ -1071,7 +1142,7 @@ var GenerateMutation = (_class = function (_Component) {
       }
 
       if (this.isObjectType(ofTypeConstructorName) || this.isObjectType(typeConstructorName)) {
-        var _ret2 = function () {
+        var _ret3 = function () {
           var fields = ofType ? ofType.getFields() : type.getFields();
           if (Object.keys(fields).includes('id')) {
             return {
@@ -1099,7 +1170,7 @@ var GenerateMutation = (_class = function (_Component) {
           };
         }();
 
-        if ((typeof _ret2 === 'undefined' ? 'undefined' : (0, _typeof3.default)(_ret2)) === "object") return _ret2.v;
+        if ((typeof _ret3 === 'undefined' ? 'undefined' : (0, _typeof3.default)(_ret3)) === "object") return _ret3.v;
       }
 
       if (this.isUnionType(typeConstructorName) || this.isUnionType(ofTypeConstructorName)) {
@@ -1143,90 +1214,9 @@ var GenerateMutation = (_class = function (_Component) {
       return graphqlObject.name + ' ' + argsString + ' ' + subSelectionString;
     }
   }, {
-    key: 'mutationPressed',
-    value: function mutationPressed(mutationName) {
-      var _this5 = this;
-
-      var mutationFields = this.props.schema.getMutationType().getFields();
-      var mutation = mutationFields[mutationName];
-      var mutationArgs = mutation.args;
-
-      var queryVariables = [];
-      var inputs = mutationArgs.map(function (mutationArg, index) {
-        var type = mutationArg.type;
-        var typeConstructorName = type.constructor.name;
-        var ofType = type.ofType;
-        var ofTypeConstructorName = ofType ? ofType.constructor.name : '';
-
-        var isBasicType = _this5.isScalar(typeConstructorName) || _this5.isScalar(ofTypeConstructorName);
-        var valueObject = _this5.generateInputObject(mutationArg);
-
-        if (!isBasicType) {
-          queryVariables.push({
-            name: '$input_' + index,
-            type: ofType ? ofType.name : type.name,
-            value: valueObject
-          });
-        }
-
-        var valueObjectString = isBasicType ? JSON.stringify(valueObject) : '$input_' + index;
-        return mutationArg.name + ': ' + valueObjectString;
-      });
-      var inputString = inputs.join(',');
-      if (inputString) {
-        inputString = '(' + inputString + ')';
-      }
-
-      var mutationInputString = queryVariables.map(function (item) {
-        return item.name + ': ' + item.type + '!';
-      }).join(',');
-      if (mutationInputString) {
-        mutationInputString = '(' + mutationInputString + ')';
-      }
-
-      var queryVariablesObject = queryVariables.reduce(function (previousValue, currentValue) {
-        previousValue[currentValue.name.slice(1)] = currentValue.value;
-        return previousValue;
-      }, {});
-
-      var outputType = mutation.type;
-      var outputOfType = outputType.ofType;
-      var outputTypeConstructorName = outputType.constructor.name;
-      var outputOfTypeConstructorName = outputOfType ? outputOfType.constructor.name : '';
-      var isScalarOutputType = this.isScalar(outputTypeConstructorName) || this.isScalar(outputOfTypeConstructorName);
-      var outputString = '';
-      if (!isScalarOutputType) {
-        (function () {
-          var outputFields = outputType.getFields();
-          var outputStrings = Object.keys(outputFields).map(function (fieldKey) {
-            var outputField = outputFields[fieldKey];
-            return '' + _this5.generateOutputObjectString(outputField);
-          });
-          outputString = '{ ' + outputStrings.join(',') + ' }';
-        })();
-      }
-
-      var queryString = '\n      mutation ' + mutationName + 'Mutation' + mutationInputString + ' {\n        ' + mutationName + inputString + ' ' + outputString + '\n      }\n    ';
-      var prettyQuery = (0, _graphql.print)((0, _graphql.parse)(queryString));
-      var queryVariablesString = JSON.stringify(queryVariablesObject, null, '  ');
-
-      this.setState({
-        showMutationsPopup: false,
-        mutationSearchText: ''
-      });
-      this.props.updateQueryVariablesResponse && this.props.updateQueryVariablesResponse(prettyQuery, queryVariablesString);
-    }
-  }, {
-    key: 'generateMutationPressed',
-    value: function generateMutationPressed() {
-      this.setState({
-        showMutationsPopup: !this.state.showMutationsPopup
-      });
-    }
-  }, {
     key: 'renderMutations',
     value: function renderMutations() {
-      var _this6 = this;
+      var _this5 = this;
 
       if (!this.state.showMutationsPopup) {
         return null;
@@ -1243,16 +1233,16 @@ var GenerateMutation = (_class = function (_Component) {
         { style: _styles2.default.popup },
         _react2.default.createElement('input', {
           onChange: function onChange(event) {
-            return _this6.setState({ mutationSearchText: event.target.value });
+            return _this5.setState({ mutationSearchText: event.target.value });
           },
           style: Object.assign({}, _styles2.default.searchInput, mutationSearchInputStyle),
           type: 'text',
           placeholder: 'Find mutation...',
           onFocus: function onFocus() {
-            return _this6.setState({ mutationSearchInputFocused: true });
+            return _this5.setState({ mutationSearchInputFocused: true });
           },
           onBlur: function onBlur() {
-            return _this6.setState({ mutationSearchInputFocused: false });
+            return _this5.setState({ mutationSearchInputFocused: false });
           },
           autoFocus: true
         }),
@@ -1266,7 +1256,7 @@ var GenerateMutation = (_class = function (_Component) {
               className: 'menuListButton',
               style: _styles2.default.menuListButton,
               onClick: function onClick() {
-                return _this6.mutationPressed(mutationName);
+                return _this5.mutationPressed(mutationName);
               }
             },
             mutationName
@@ -1295,10 +1285,11 @@ var GenerateMutation = (_class = function (_Component) {
     }
   }]);
   return GenerateMutation;
-}(_react.Component), (_applyDecoratedDescriptor(_class.prototype, 'mutationPressed', [_coreDecorators.autobind], Object.getOwnPropertyDescriptor(_class.prototype, 'mutationPressed'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateMutationPressed', [_coreDecorators.autobind], Object.getOwnPropertyDescriptor(_class.prototype, 'generateMutationPressed'), _class.prototype)), _class);
+}(_react.Component);
+
 exports.default = GenerateMutation;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../helpers/json2-mod":10,"./styles":8,"babel-runtime/helpers/classCallCheck":20,"babel-runtime/helpers/createClass":21,"babel-runtime/helpers/inherits":23,"babel-runtime/helpers/possibleConstructorReturn":24,"babel-runtime/helpers/typeof":25,"core-decorators":60,"graphiql":174,"graphql":193}],5:[function(require,module,exports){
+},{"../helpers/json2-mod":10,"./styles":8,"babel-runtime/helpers/classCallCheck":20,"babel-runtime/helpers/createClass":21,"babel-runtime/helpers/inherits":23,"babel-runtime/helpers/possibleConstructorReturn":24,"babel-runtime/helpers/typeof":25,"graphiql":174,"graphql":193}],5:[function(require,module,exports){
 (function (global){
 'use strict';
 
