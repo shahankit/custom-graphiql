@@ -24,6 +24,7 @@ export default class CustomGraphiQL extends Component {
   static propTypes = {
     fetcher: PropTypes.func,
     schema: PropTypes.instanceOf(GraphQLSchema),
+    currentURL: PropTypes.string,
     query: PropTypes.string,
     variables: PropTypes.string,
     operationName: PropTypes.string,
@@ -46,7 +47,8 @@ export default class CustomGraphiQL extends Component {
     // Cache the storage instance
     this.storage = props.storage || window.localStorage;
 
-    const currentURL = this.storageGet('currentURL');
+    // Determine the initial url.
+    const currentURL = this.storageGet('currentURL') || props.currentURL;
 
     // Determine the initial query to display.
     const query = props.query || this.storageGet(`${currentURL}:query`) || undefined;
