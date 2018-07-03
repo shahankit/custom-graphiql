@@ -145,7 +145,7 @@ export default class CustomGraphiQL extends Component {
       const graphQLParams = { query: introspectionQuery };
       const response = await fetch(url, {
         method: 'post',
-        credentials: 'same-origin',
+        // credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
           ...headers
