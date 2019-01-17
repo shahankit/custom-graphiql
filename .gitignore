@@ -11,3 +11,5 @@ dist/
 /custom-graphiql.js
 /custom-graphiql.min.js
 /custom-graphiql.css
+
+yarn-error.log
