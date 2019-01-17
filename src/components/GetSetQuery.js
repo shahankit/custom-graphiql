@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import GraphiQL from 'graphiql';
-import { autobind } from 'core-decorators';
 import CopyToClipboard from 'react-copy-to-clipboard';
 import styles from './styles';
 
@@ -15,8 +14,7 @@ export default class GetSetQuery extends Component {
     };
   }
 
-  @autobind
-  onQueryStringInputKeyPress(event) {
+  onQueryStringInputKeyPress = (event) => {
     if (event.which === 13) {
       this.queryStringInputRef && this.queryStringInputRef.blur();
       this.onSetButtonPressed();
@@ -27,8 +25,7 @@ export default class GetSetQuery extends Component {
     return true;
   }
 
-  @autobind
-  onSetButtonPressed() {
+  onSetButtonPressed = () => {
     const queryStringInput = this.queryStringInputRef.value;
     this.props.setQueryFromString && this.props.setQueryFromString(queryStringInput);
     this.setState({
@@ -36,8 +33,7 @@ export default class GetSetQuery extends Component {
     });
   }
 
-  @autobind
-  handleClipBoardCopied() {
+  handleClipBoardCopied = () => {
     this.setState({
       showCopied: true
     });
@@ -48,8 +44,7 @@ export default class GetSetQuery extends Component {
     }, 2000);
   }
 
-  @autobind
-  getSetQueryPressed() {
+  getSetQueryPressed = () => {
     this.setState({
       showQueryStringPopup: !this.state.showQueryStringPopup
     });

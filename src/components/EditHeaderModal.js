@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import styles from './styles';
 import EditHeaderFormItem from './EditHeaderFormItem';
-import { autobind } from 'core-decorators';
-
+s
 export default class EditHeaderModal extends Component {
   constructor(props) {
     super(props);
@@ -20,8 +19,7 @@ export default class EditHeaderModal extends Component {
     };
   }
 
-  @autobind
-  saveButtonPressed() {
+  saveButtonPressed = () => {
     const headerKeysCopy = this.state.headerKeys.slice(0, this.state.headerKeys.length - 1);
     const validHeaders = headerKeysCopy.map(headerKey => headerKey.length !== 0 && !headerKey.includes(' '));
     validHeaders.push(true);
@@ -37,21 +35,18 @@ export default class EditHeaderModal extends Component {
     }
   }
 
-  @autobind  
-  updateKey(key, index) {
+  updateKey = (key, index) => {
     this.state.headerKeys[index] = key;
     this.setState({});
   }
 
-  @autobind    
-  updateValue(value, index) {
+  updateValue = (value, index) => {
     this.state.headerValues[index] = value;
     this.setState({});
   }
 
 
-  @autobind
-  deleteHeader(index) {
+  deleteHeader = (index) => {
     if (this.state.headerKeys.length === 1) {
       return;
     }
@@ -61,16 +56,14 @@ export default class EditHeaderModal extends Component {
     this.setState({});
   }
 
-  @autobind
-  onInputFocus(index) {
+  onInputFocus = (index) => {
     const isLast = index === (this.state.headerKeys.length - 1);
     this.state.validHeaders[index] = true;
     isLast && this.pushNewHeader();
     this.setState({});
   }
 
-  @autobind
-  pushNewHeader() {
+  pushNewHeader = () => {
     this.state.headerKeys.push('');
     this.state.headerValues.push('');
     this.state.validHeaders.push(true);

@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import styles from './styles.js';
-import { autobind } from 'core-decorators';
 
 export default class TopBar extends Component {
   constructor(props) {
@@ -19,8 +18,7 @@ export default class TopBar extends Component {
     }
   }
 
-  @autobind
-  onInputKeyPress(event) {
+  onInputKeyPress = (event) => {
     if (event.which === 13) {
       this.urlInputRef && this.urlInputRef.blur();
       this.onFetchButtonPressed();
@@ -31,8 +29,7 @@ export default class TopBar extends Component {
     return true;
   }
 
-  @autobind
-  onFetchButtonPressed() {
+  onFetchButtonPressed = () => {
     const url = this.state.inputValue;
     this.props.fetchGraphQLSchema && this.props.fetchGraphQLSchema(url);
   }

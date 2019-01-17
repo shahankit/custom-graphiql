@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import styles from './styles';
 import GraphiQL from 'graphiql';
-import { autobind } from 'core-decorators';
 
 export default class SaveLoadQuery extends Component {
   constructor(props) {
@@ -14,8 +13,7 @@ export default class SaveLoadQuery extends Component {
     };
   }
 
-  @autobind
-  removeQueryPressed(event, queryName) {
+  removeQueryPressed = (event, queryName) => {
     event.stopPropagation();
     const currentURL = this.props.graphQLEndpoint;
     const savedQueries = this.props.getSavedQueries ? this.props.getSavedQueries() : {};
@@ -25,8 +23,7 @@ export default class SaveLoadQuery extends Component {
     this.setState({});
   }
 
-  @autobind
-  saveQueryPressed(queryName) {
+  saveQueryPressed = (queryName) => {
     const currentURL = this.props.graphQLEndpoint;
     const savedQueries = this.props.getSavedQueries ? this.props.getSavedQueries() : {};
     const encodedQuery = encodeURIComponent(this.props.query);
@@ -42,23 +39,20 @@ export default class SaveLoadQuery extends Component {
     });
   }
 
-  @autobind
-  loadSavedQueryPressed(queryString) {
+  loadSavedQueryPressed = (queryString) => {
     this.props.setQueryFromString && this.props.setQueryFromString(queryString);
     this.setState({
       showSavedQueriesPopup: false
     });
   }
 
-  @autobind
-  saveLoadQueryPressed() {
+  saveLoadQueryPressed = () => {
     this.setState({
       showSavedQueriesPopup: !this.state.showSavedQueriesPopup
     });
   }
 
-  @autobind
-  renderSavedQueriesPopup() {
+  renderSavedQueriesPopup = () => {
     if (!this.state.showSavedQueriesPopup) {
       return null;
     }
