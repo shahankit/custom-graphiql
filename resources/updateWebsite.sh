@@ -1,3 +1,6 @@
+yarn
+yarn build
+
 mkdir -p ./website/js
 mkdir -p ./website/css
 

@@ -13,3 +13,6 @@ dist/
 /custom-graphiql.css
 
 yarn-error.log
+
+website/css
+website/js
