@@ -1,4 +1,3 @@
-yarn
 yarn build
 
 mkdir -p ./website/js
