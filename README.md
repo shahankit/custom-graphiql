@@ -8,7 +8,7 @@ but within browser without requirement for an app.
 
 [![npm](https://img.shields.io/npm/v/custom-graphiql.svg)](https://www.npmjs.com/package/custom-graphiql)
 
-Try it out here: https://shahankit.github.io/custom-graphiql/
+Try it out here: https://graphiql-ide.netlify.com/
 
 ![](resources/cgraphiql.gif)
 
