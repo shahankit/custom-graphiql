@@ -1,8 +1,14 @@
 import React, { Component } from 'react';
-import styles from './styles';
+import PropTypes from 'prop-types';
 import EditHeaderFormItem from './EditHeaderFormItem';
-s
+
 export default class EditHeaderModal extends Component {
+  static propTypes = {
+    headers: PropTypes.object.isRequired,
+    onUpdateHeaders: PropTypes.func,
+    onEditHeadersCancel: PropTypes.func
+  };
+
   constructor(props) {
     super(props);
 
@@ -13,40 +19,61 @@ export default class EditHeaderModal extends Component {
     const validHeaders = headerKeys.map(() => true);
 
     this.state = {
-      headerKeys: headerKeys,
-      headerValues: headerValues,
-      validHeaders: validHeaders
+      headerKeys,
+      headerValues,
+      validHeaders
     };
   }
 
-  saveButtonPressed = () => {
-    const headerKeysCopy = this.state.headerKeys.slice(0, this.state.headerKeys.length - 1);
-    const validHeaders = headerKeysCopy.map(headerKey => headerKey.length !== 0 && !headerKey.includes(' '));
+  handleSaveButton = () => {
+    const headerKeysCopy = this.state.headerKeys.slice(
+      0,
+      this.state.headerKeys.length - 1
+    );
+    const validHeaders = headerKeysCopy.map(
+      headerKey => headerKey.length !== 0 && !headerKey.includes(' ')
+    );
     validHeaders.push(true);
-    this.setState({
-      validHeaders: validHeaders
-    });
-    const allHeadersValid = validHeaders.reduce((p, c) => (p && c), true);
+    this.setState({ validHeaders });
+    const allHeadersValid = validHeaders.reduce((p, c) => p && c, true);
     if (allHeadersValid) {
-      const headerValuesCopy = this.state.headerValues.slice(0, this.state.headerValues.length - 1);
+      const headerValuesCopy = this.state.headerValues.slice(
+        0,
+        this.state.headerValues.length - 1
+      );
       const newHeaders = {};
-      headerKeysCopy.forEach((headerKey, index) => (newHeaders[headerKey] = headerValuesCopy[index]));
-      this.props.updateHeaders && this.props.updateHeaders(newHeaders);
+      headerKeysCopy.forEach(
+        (headerKey, index) => (newHeaders[headerKey] = headerValuesCopy[index])
+      );
+      if (this.props.onUpdateHeaders) {
+        this.props.onUpdateHeaders(newHeaders);
+      }
     }
-  }
+  };
 
-  updateKey = (key, index) => {
-    this.state.headerKeys[index] = key;
-    this.setState({});
-  }
+  handleUpdateHeaderKey = (key, index) => {
+    const headerKeys = this.state.headerKeys;
+    this.setState({
+      headerKeys: [
+        ...headerKeys.slice(0, index),
+        key,
+        ...headerKeys.slice(index + 1)
+      ]
+    });
+  };
 
-  updateValue = (value, index) => {
-    this.state.headerValues[index] = value;
-    this.setState({});
-  }
+  handleUpdateHeaderValue = (value, index) => {
+    const headerValues = this.state.headerValues;
+    this.setState({
+      headerValues: [
+        ...headerValues.slice(0, index),
+        value,
+        ...headerValues.slice(index + 1)
+      ]
+    });
+  };
 
-
-  deleteHeader = (index) => {
+  handleHeaderDeleted = index => {
     if (this.state.headerKeys.length === 1) {
       return;
     }
@@ -54,64 +81,72 @@ export default class EditHeaderModal extends Component {
     this.state.headerValues.splice(index, 1);
     this.state.validHeaders.splice(index, 1);
     this.setState({});
-  }
+  };
 
-  onInputFocus = (index) => {
-    const isLast = index === (this.state.headerKeys.length - 1);
-    this.state.validHeaders[index] = true;
-    isLast && this.pushNewHeader();
-    this.setState({});
-  }
+  handleInputFocus = index => {
+    const isLast = index === this.state.headerKeys.length - 1;
+    const validHeaders = this.state.validHeaders;
+    const headerKeys = this.state.headerKeys;
+    const headerValues = this.state.headerValues;
 
-  pushNewHeader = () => {
-    this.state.headerKeys.push('');
-    this.state.headerValues.push('');
-    this.state.validHeaders.push(true);
+    const updatedValidHeaders = [
+      ...validHeaders.slice(0, index),
+      true,
+      ...validHeaders.slice(index + 1)
+    ];
+    if (isLast) {
+      updatedValidHeaders.push(true);
+    }
+
+    this.setState({
+      validHeaders: updatedValidHeaders,
+      headerKeys: isLast ? [...headerKeys, ''] : headerKeys,
+      headerValues: isLast ? [...headerValues, ''] : headerValues
+    });
+  };
+
+  renderFormItem = (_, index) => {
+    const { headerKeys, headerValues, validHeaders } = this.state;
+    return (
+      <EditHeaderFormItem
+        key={index}
+        index={index}
+        totalItems={headerKeys.length}
+        headerKey={headerKeys[index]}
+        headerValue={headerValues[index]}
+        isValid={validHeaders[index]}
+        onInputFocus={this.handleInputFocus}
+        onDeleteHeader={this.handleHeaderDeleted}
+        onUpdateKey={this.handleUpdateHeaderKey}
+        onUpdateValue={this.handleUpdateHeaderValue}
+      />
+    )
   }
 
   renderFormItems() {
-    const headerKeys = this.state.headerKeys;
-    const headerValues = this.state.headerValues;
-    const validHeaders = this.state.validHeaders;
-    return headerKeys.map((headerItem, index) => {
-      return (
-        <EditHeaderFormItem
-          key={index}
-          index={index}
-          totalItems={headerKeys.length}
-          headerKey={headerKeys[index]}
-          headerValue={headerValues[index]}
-          isValid={validHeaders[index]}
-          onInputFocus={this.onInputFocus}
-          deleteHeader={this.deleteHeader}
-          updateKey={this.updateKey}
-          updateValue={this.updateValue}
-        />
-      );
-    });
+    const { headerKeys } = this.state;
+    return headerKeys.map(this.renderFormItem);
   }
 
   render() {
     return (
-      <div style={styles.editHeaderModalContainer}>
-        <div style={styles.editHeaderModal}>
-          <div style={styles.editHeaderModelTitle}>Edit HTTP headers</div>
+      <div className="edit-form-modal-container">
+        <div className="edit-form-modal">
+          <div className="title">{'Edit HTTP headers'}</div>
           {this.renderFormItems()}
-          <div style={styles.editModalButtonsWrapper}>
-            <div
-              className={'shadowButton'}
-              style={styles.shadowButton}
-              onClick={this.props.hideEditHeaderModal}
+          <div className="buttons-container">
+            <button
+              className="shadow-button"
+              onClick={this.props.onEditHeadersCancel}
             >
-              Cancel
-            </div>
-            <div
-              className={'shadowButton'}
-              style={Object.assign({}, styles.shadowButton, styles.editHeaderModalSaveButton)}
-              onClick={this.saveButtonPressed}
+              {'Cancel'}
+            </button>
+            <button
+              className="shadow-button save-button"
+              onClick={this.handleSaveButton}
             >
-              Save
-            </div>
+              {'Save'}
+            </button>
           </div>
         </div>
       </div>

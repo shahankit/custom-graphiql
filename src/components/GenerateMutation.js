@@ -1,10 +1,8 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import GraphiQL from 'graphiql';
-import {
-  print,
-  parse
-} from 'graphql';
-import styles from './styles';
+import { GraphQLSchema } from 'graphql';
+import { print, parse } from 'graphql';
 import JSON2_MOD from '../helpers/json2-mod';
 
 const basicTypesDefaultValues = {
@@ -12,17 +10,21 @@ const basicTypesDefaultValues = {
   ID: '',
   Int: 0,
   String: '',
-  Boolean: false,
+  Boolean: false
 };
 
 export default class GenerateMutation extends Component {
+  static propTypes = {
+    schema: PropTypes.instanceOf(GraphQLSchema),
+    onUpdateQueryVariablesResponse: PropTypes.func
+  };
+
   constructor(props) {
     super(props);
 
     this.state = {
       showMutationsPopup: false,
-      mutationSearchText: '',
-      mutationSearchInputFocused: false
+      mutationSearchText: ''
     };
   }
 
@@ -107,10 +109,20 @@ export default class GenerateMutation extends Component {
       return secondaryType.getValues()[0].value;
     }
 
-    if (this.isObjectType(secondaryTypeConstructorName) || this.isObjectType(primaryTypeConstructorName)) {
-      const fields = secondaryType ? secondaryType.getFields() : primaryType.getFields();
+    if (
+      this.isObjectType(secondaryTypeConstructorName) ||
+      this.isObjectType(primaryTypeConstructorName)
+    ) {
+      const fields = secondaryType
+        ? secondaryType.getFields()
+        : primaryType.getFields();
       const fieldsInputObject = {};
-      Object.keys(fields).forEach(fieldKey => (fieldsInputObject[fieldKey] = this.generateInputObject(fields[fieldKey])));
+      Object.keys(fields).forEach(
+        fieldKey =>
+          (fieldsInputObject[fieldKey] = this.generateInputObject(
+            fields[fieldKey]
+          ))
+      );
       if (this.isList(primaryTypeConstructorName)) {
         return [fieldsInputObject];
       }
@@ -126,22 +138,33 @@ export default class GenerateMutation extends Component {
     const ofType = type.ofType;
     const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
 
-    if (this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName)) {
+    if (
+      this.isScalar(typeConstructorName) ||
+      this.isScalar(ofTypeConstructorName)
+    ) {
       return '';
     }
 
-    if (this.isObjectType(ofTypeConstructorName) || this.isObjectType(typeConstructorName)) {
+    if (
+      this.isObjectType(ofTypeConstructorName) ||
+      this.isObjectType(typeConstructorName)
+    ) {
       const fields = ofType ? ofType.getFields() : type.getFields();
       if (Object.keys(fields).includes('id')) {
         return '{ id }';
       }
 
-      const scalarKey = Object.keys(fields).find((fieldKey) => {
+      const scalarKey = Object.keys(fields).find(fieldKey => {
         const fieldType = fields[fieldKey].type;
         const fieldTypeConstructorName = fieldType.constructor.name;
         const fieldOfType = fieldType.ofType;
-        const fieldOfTypeConstructorName = fieldOfType ? fieldOfType.constructor.name : '';
-        return this.isScalar(fieldTypeConstructorName) || this.isScalar(fieldOfTypeConstructorName);
+        const fieldOfTypeConstructorName = fieldOfType
+          ? fieldOfType.constructor.name
+          : '';
+        return (
+          this.isScalar(fieldTypeConstructorName) ||
+          this.isScalar(fieldOfTypeConstructorName)
+        );
       });
       if (scalarKey) {
         return `{ ${scalarKey} }`;
@@ -152,11 +175,18 @@ export default class GenerateMutation extends Component {
       return `{ ${this.generateOutputObjectString(complexField)} }`;
     }
 
-    if (this.isUnionType(typeConstructorName) || this.isUnionType(ofTypeConstructorName)) {
-      const unionTypes = this.isUnionType(typeConstructorName) ? type.getTypes() : ofType.getTypes();
-      const subSelectionStringArray = unionTypes.map((item) => {
+    if (
+      this.isUnionType(typeConstructorName) ||
+      this.isUnionType(ofTypeConstructorName)
+    ) {
+      const unionTypes = this.isUnionType(typeConstructorName)
+        ? type.getTypes()
+        : ofType.getTypes();
+      const subSelectionStringArray = unionTypes.map(item => {
         const wrapperObject = { type: item };
-        const itemSubSelectionString = this.getSubSelectionString(wrapperObject);
+        const itemSubSelectionString = this.getSubSelectionString(
+          wrapperObject
+        );
         const unionTypeName = item.name;
         return `... on ${unionTypeName} ${itemSubSelectionString}`;
       });
@@ -168,16 +198,20 @@ export default class GenerateMutation extends Component {
 
   generateOutputObjectString(graphqlObject) {
     const args = graphqlObject.args;
-    const argsStringArray = args.map((item) => {
+    const argsStringArray = args.map(item => {
       const type = item.type;
       const typeConstructorName = type.constructor.name;
       const ofType = type.ofType;
       const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
 
-      const isBasicType = this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName);
+      const isBasicType =
+        this.isScalar(typeConstructorName) ||
+        this.isScalar(ofTypeConstructorName);
 
       const valueObject = this.generateInputObject(item);
-      const valueObjectString = isBasicType ? JSON.stringify(valueObject) : JSON2_MOD.stringify(valueObject, null, '', true);
+      const valueObjectString = isBasicType
+        ? JSON.stringify(valueObject)
+        : JSON2_MOD.stringify(valueObject, null, '', true);
       return `${item.name}: ${valueObjectString}`;
     });
     let argsString = argsStringArray.join(',');
@@ -190,7 +224,7 @@ export default class GenerateMutation extends Component {
     return `${graphqlObject.name} ${argsString} ${subSelectionString}`;
   }
 
-  mutationPressed = (mutationName) => {
+  mutationPressed = mutationName => {
     const mutationFields = this.props.schema.getMutationType().getFields();
     const mutation = mutationFields[mutationName];
     const mutationArgs = mutation.args;
@@ -202,7 +236,9 @@ export default class GenerateMutation extends Component {
       const ofType = type.ofType;
       const ofTypeConstructorName = ofType ? ofType.constructor.name : '';
 
-      const isBasicType = this.isScalar(typeConstructorName) || this.isScalar(ofTypeConstructorName);
+      const isBasicType =
+        this.isScalar(typeConstructorName) ||
+        this.isScalar(ofTypeConstructorName);
       const valueObject = this.generateInputObject(mutationArg);
 
       if (!isBasicType) {
@@ -213,7 +249,9 @@ export default class GenerateMutation extends Component {
         });
       }
 
-      const valueObjectString = isBasicType ? JSON.stringify(valueObject) : ('$input_' + index);
+      const valueObjectString = isBasicType
+        ? JSON.stringify(valueObject)
+        : '$input_' + index;
       return `${mutationArg.name}: ${valueObjectString}`;
     });
     let inputString = inputs.join(',');
@@ -221,25 +259,34 @@ export default class GenerateMutation extends Component {
       inputString = `(${inputString})`;
     }
 
-    let mutationInputString = queryVariables.map(item => (`${item.name}: ${item.type}!`)).join(',');
+    let mutationInputString = queryVariables
+      .map(item => `${item.name}: ${item.type}!`)
+      .join(',');
     if (mutationInputString) {
       mutationInputString = `(${mutationInputString})`;
     }
 
-    const queryVariablesObject = queryVariables.reduce((previousValue, currentValue) => {
-      previousValue[currentValue.name.slice(1)] = currentValue.value;
-      return previousValue;
-    }, {});
+    const queryVariablesObject = queryVariables.reduce(
+      (previousValue, currentValue) => {
+        previousValue[currentValue.name.slice(1)] = currentValue.value;
+        return previousValue;
+      },
+      {}
+    );
 
     const outputType = mutation.type;
     const outputOfType = outputType.ofType;
     const outputTypeConstructorName = outputType.constructor.name;
-    const outputOfTypeConstructorName = outputOfType ? outputOfType.constructor.name : '';
-    const isScalarOutputType = this.isScalar(outputTypeConstructorName) || this.isScalar(outputOfTypeConstructorName);
+    const outputOfTypeConstructorName = outputOfType
+      ? outputOfType.constructor.name
+      : '';
+    const isScalarOutputType =
+      this.isScalar(outputTypeConstructorName) ||
+      this.isScalar(outputOfTypeConstructorName);
     let outputString = '';
     if (!isScalarOutputType) {
       const outputFields = outputType.getFields();
-      const outputStrings = Object.keys(outputFields).map((fieldKey) => {
+      const outputStrings = Object.keys(outputFields).map(fieldKey => {
         const outputField = outputFields[fieldKey];
         return `${this.generateOutputObjectString(outputField)}`;
       });
@@ -256,18 +303,35 @@ export default class GenerateMutation extends Component {
 
     this.setState({
       showMutationsPopup: false,
-      mutationSearchText: '',
+      mutationSearchText: ''
     });
-    this.props.updateQueryVariablesResponse && this.props.updateQueryVariablesResponse(prettyQuery, queryVariablesString);
-  }
+    if (this.props.onUpdateQueryVariablesResponse) {
+      this.props.onUpdateQueryVariablesResponse(
+        prettyQuery,
+        queryVariablesString
+      );
+    }
+  };
 
-  generateMutationPressed = () => {
+  handleMutationSearchTextChange = event =>
+    this.setState({ mutationSearchText: event.target.value });
+
+  handleToggleMutationsPopup = () =>
     this.setState({
       showMutationsPopup: !this.state.showMutationsPopup
     });
-  }
 
-  renderMutations() {
+  renderMutationLabel = mutationName => (
+    <div
+      key={mutationName}
+      className="menu-list-item"
+      onClick={() => this.mutationPressed(mutationName)}
+    >
+      {mutationName}
+    </div>
+  );
+
+  renderMutations = () => {
     if (!this.state.showMutationsPopup) {
       return null;
     }
@@ -275,50 +339,42 @@ export default class GenerateMutation extends Component {
     const mutation = this.props.schema.getMutationType();
     const mutationFields = mutation.getFields();
 
-    const mutationSearchInputStyle = this.state.mutationSearchInputFocused ? styles.searchInputFocused : null;
-    const mutationSearchText = (this.state.mutationSearchText || '').toLowerCase();
+    const mutationSearchText = (
+      this.state.mutationSearchText || ''
+    ).toLowerCase();
+
+    const mutationTitles = Object.keys(mutationFields)
+      .filter(v => v.toLowerCase().includes(mutationSearchText))
+      .sort();
 
     return (
-      <div style={styles.popup}>
+      <div className="menu-popup">
         <input
-          onChange={event => this.setState({ mutationSearchText: event.target.value })}
-          style={Object.assign({}, styles.searchInput, mutationSearchInputStyle)}
+          className="mutation-search-input"
+          onChange={this.handleMutationSearchTextChange}
           type={'text'}
           placeholder={'Find mutation...'}
-          onFocus={() => this.setState({ mutationSearchInputFocused: true })}
-          onBlur={() => this.setState({ mutationSearchInputFocused: false })}
-          autoFocus={true}
+          autoFocus
         />
-        {Object.keys(mutationFields)
-          .sort()
-          .filter(value => value.toLowerCase().includes(mutationSearchText))
-          .map(mutationName => (
-            <div
-              key={mutationName}
-              className={'menuListButton'}
-              style={styles.menuListButton}
-              onClick={() => this.mutationPressed(mutationName)}
-            >
-              {mutationName}
-            </div>
-        ))}
+        {mutationTitles.map(this.renderMutationLabel)}
       </div>
     );
   }
 
   render() {
-    const showGenerateMutation = this.props.schema && this.props.schema.getMutationType();
+    const showGenerateMutation =
+      this.props.schema && this.props.schema.getMutationType();
     if (!showGenerateMutation) {
       return null;
     }
 
     return (
-      <div style={styles.toolBarButtonWrapper}>
+      <div className="toolbar-button-wrapper">
         {this.renderMutations()}
-        <GraphiQL.ToolbarButton
+        <GraphiQL.Button
           title={'Generate mutation query'}
           label={'Generate Mutation'}
-          onClick={this.generateMutationPressed}
+          onClick={this.handleToggleMutationsPopup}
         />
       </div>
     );

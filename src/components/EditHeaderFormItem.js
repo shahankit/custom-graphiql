@@ -1,55 +1,86 @@
 import React, { Component } from 'react';
-import styles from './styles';
+import PropTypes from 'prop-types';
 
 export default class EditHeaderFormItem extends Component {
-  render() {
-    const isLast = this.props.index === (this.props.totalItems - 1);
+  static defaultProps = {
+    onUpdateKey: () => {},
+    onUpdateValue: () => {},
+    onInputFocus: () => {},
+    onDeleteHeader: () => {}
+  };
+
+  static propTypes = {
+    index: PropTypes.number.isRequired,
+    totalItems: PropTypes.number.isRequired,
+    isValid: PropTypes.bool.isRequired,
+    headerKey: PropTypes.string.isRequired,
+    headerValue: PropTypes.string.isRequired,
+    onUpdateKey: PropTypes.func,
+    onUpdateValue: PropTypes.func,
+    onInputFocus: PropTypes.func,
+    onDeleteHeader: PropTypes.func
+  };
+
+  renderDeleteButton() {
+    const { index, totalItems, onDeleteHeader } = this.props;
+    const isLast = index === totalItems - 1;
+
+    if (isLast) {
+      return (
+        <div className="delete-button delete-button-stub" />
+      );
+    }
+
     return (
-      <div style={styles.editModalFormItem}>
-        <div
-          className={'editModalInputWrapper'}
-          style={Object.assign({}, styles.editModalInputWrapper, this.props.isValid ? null : { backgroundColor: '#F8EDED' })}
+      <button
+        className="shadow-button delete-button"
+        onClick={() => onDeleteHeader(index)}
+      >
+        <svg
+          height="16"
+          role="img"
+          version="1.1"
+          viewBox="0 0 12 16"
+          width="12"
         >
+          <path
+            fillRule="evenodd"
+            d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48z"
+          />
+        </svg>
+      </button>
+    );
+  }
+
+  render() {
+    const {
+      isValid,
+      headerKey,
+      headerValue,
+      onUpdateKey,
+      onUpdateValue,
+      onInputFocus,
+      index
+    } = this.props;
+    return (
+      <div className="edit-form-input-item">
+        <div className={`input-row ${isValid ? '' : 'input-row-invalid'}`}>
           <input
-            className={'editModalInput'}
-            style={Object.assign({}, styles.editModalInput, styles.editModelKeyInput)}
+            className="input key-input"
             placeholder={'key'}
-            value={this.props.headerKey}
-            onFocus={() => this.props.onInputFocus(this.props.index)}
-            onChange={event => this.props.updateKey(event.target.value, this.props.index)}
+            value={headerKey}
+            onFocus={() => onInputFocus(index)}
+            onChange={event => onUpdateKey(event.target.value, index)}
           />
           <input
-            className={'editModalInput'}
-            style={Object.assign({}, styles.editModalInput, styles.editModelValueInput)}
+            className="input value-input"
             placeholder={'value'}
-            value={this.props.headerValue}
-            onFocus={() => this.props.onInputFocus(this.props.index)}
-            onChange={event => this.props.updateValue(event.target.value, this.props.index)}
+            value={headerValue}
+            onFocus={() => onInputFocus(index)}
+            onChange={event => onUpdateValue(event.target.value, index)}
           />
         </div>
-        {(() => {
-          if (isLast) {
-            return <div style={Object.assign({}, styles.editModalFormItemDelete, styles.editModalFormItemDeleteStub)} />
-          }
-
-          return (
-            <div
-              className={'editModalFormItemDelete'}
-              style={styles.editModalFormItemDelete}
-              onClick={() => this.props.deleteHeader(this.props.index)}
-            >
-              <svg
-                height="16"
-                role="img"
-                version="1.1"
-                viewBox="0 0 12 16"
-                width="12"
-              >
-                <path fillRule="evenodd" d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48z" />
-              </svg>
-            </div>
-          );
-        })()}
+        {this.renderDeleteButton()}
       </div>
     );
   }

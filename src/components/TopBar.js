@@ -1,76 +1,84 @@
 import React, { Component } from 'react';
-import styles from './styles.js';
+import PropTypes from 'prop-types';
 
 export default class TopBar extends Component {
+  static propTypes = {
+    graphQLEndpoint: PropTypes.string,
+    schemaFetchError: PropTypes.string,
+    headers: PropTypes.object,
+    onChangeURL: PropTypes.func,
+    onEditHeaders: PropTypes.func
+  };
+
+  static defaultProps = {
+    graphQLEndpoint: '',
+    schemaFetchError: '',
+    onChangeURL: () => {},
+    headers: {},
+    onEditHeaders: () => {}
+  };
+
   constructor(props) {
     super(props);
 
     this.state = {
-      inputFocused: false,
-      schemaFetchError: props.schemaFetchError,
-      inputValue: props.graphQLEndpoint,
+      inputFocused: false
     };
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (this.props.schemaFetchError !== nextProps.schemaFetchError) {
-      this.state.schemaFetchError = nextProps.schemaFetchError;
-    }
-  }
+  setURLInputRef = ref => {
+    this.urlInputRef = ref;
+  };
 
-  onInputKeyPress = (event) => {
+  handleInputKeyPress = event => {
     if (event.which === 13) {
-      this.urlInputRef && this.urlInputRef.blur();
-      this.onFetchButtonPressed();
+      if (this.urlInputRef) {
+        this.urlInputRef.blur();
+      }
+      this.handleFetchSchema();
       event.preventDefault();
       return false;
     }
 
     return true;
-  }
+  };
 
-  onFetchButtonPressed = () => {
-    const url = this.state.inputValue;
-    this.props.fetchGraphQLSchema && this.props.fetchGraphQLSchema(url);
-  }
+  handleFetchSchema = () => {
+    const url = this.urlInputRef.value;
+    this.props.onChangeURL(url);
+  };
 
   render() {
-    const inputWrapperStyle = this.state.inputFocused ? styles.urlInputWrapperFocused : (this.state.schemaFetchError ? styles.urlInputWrapperError : null);
+    const isError = Boolean(this.props.schemaFetchError);
+    const wrapperClass = `url-input-wrapper ${isError ? 'error' : ''}`;
+    const totalHeaders = Object.keys(this.props.headers).length;
     return (
-      <div style={styles.topBar}>
+      <div className="top-bar">
         <form>
-          <div
-            style={{...styles.urlInputWrapper, ...inputWrapperStyle}}
-            tabIndex={-1}
-          >
-            <div style={styles.urlInputLabel}>GraphQL Endpoint</div>
+          <div className={wrapperClass} tabIndex={-1}>
+            <div className="url-input-label">{'GraphQL Endpoint'}</div>
             <input
-              ref={component => component && (this.urlInputRef = component)}
-              style={styles.urlInput}
+              ref={this.setURLInputRef}
+              className="url-input"
               type={'text'}
-              value={this.state.inputValue || ''}
-              onChange={(event) => this.setState({ inputValue: event.target.value })}
+              defaultValue={this.props.graphQLEndpoint || ''}
               placeholder={'http://localhost:8080/graphql'}
-              onFocus={() => this.setState({ inputFocused: true, schemaFetchError: '' })}
-              onBlur={() => this.setState({ inputFocused: false })}
-              onKeyPress={this.onInputKeyPress}
+              onKeyPress={this.handleInputKeyPress}
             />
           </div>
         </form>
-        <div
-          className={'shadowButton'}
-          style={{...styles.shadowButton, ...styles.fetchButton}}
-          onClick={this.onFetchButtonPressed}
+        <button
+          className="shadow-button fetch-button"
+          onClick={this.handleFetchSchema}
         >
-          Fetch
-        </div>
-        <div
-          className={'shadowButton'}
-          style={{...styles.shadowButton, ...styles.editHeadersButton}}
-          onClick={this.props.onEditHeadersButtonPressed}
+          {'Fetch'}
+        </button>
+        <button
+          className="shadow-button edit-headers-button"
+          onClick={this.props.onEditHeaders}
         >
-          Edit HTTP headers ({Object.keys(this.props.headers).length})
-        </div>
+          {`Edit HTTP headers (${totalHeaders})`}
+        </button>
       </div>
     );
   }

@@ -6,7 +6,7 @@ which offers more utility button and a component which allows to query any graph
 endpoint. Inspired from [graphiql-app](https://github.com/skevy/graphiql-app/) 
 but within browser without requirement for an app.
 
-[![npm version](https://badge.fury.io/js/custom-graphiql.svg)](https://badge.fury.io/js/custom-graphiql)
+[![npm](https://img.shields.io/npm/v/custom-graphiql.svg)](https://www.npmjs.com/package/custom-graphiql)
 
 Try it out here: https://shahankit.github.io/custom-graphiql/
 
@@ -16,8 +16,10 @@ Try it out here: https://shahankit.github.io/custom-graphiql/
 
 ### Getting started
 
-```
+```sh
 npm install --save custom-graphiql
+# OR
+yarn add custom-graphiql
 ```
 
 CustomGraphiQL is React component which wraps existing GraphiQL component. It 
@@ -40,9 +42,7 @@ thie repository for how to setup CustomGraphiQL on any endpoint of your express 
 ### Features
 
 * Generates stub mutation by scanning you schema.
-* Save your queries to browser localStorage so that they can be replayed later.
 * Share current query using Get or Set query button.
-
 
 ### Usage
 
@@ -58,3 +58,27 @@ CustomGraphiQL supports all the props and children accepted by GraphiQL **except
 `fetcher` prop**. The fetch function is implemented within the component and hence no 
 fetcher props is required for CustomGraphiQL component. Check [here](https://github.com/graphql/graphiql#usage) 
 for description of available props and children and their example usage.
+
+### Contributing
+
+1. Fork this repo by using the "Fork" button in the upper-right
+
+2. Check out your fork
+
+   ```sh
+   git clone git@github.com:yournamehere/graphiql.git
+   ```
+
+3. Install or Update all dependencies
+
+   ```sh
+   yarn
+   ```
+
+4. Run development server
+
+   ```sh
+   yarn dev
+   ```
+
+5. Push your changes and raise a PR.

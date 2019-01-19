@@ -1,41 +1,36 @@
-import React, {
-  Component,
-  PropTypes
-} from 'react';
-import {
-  buildClientSchema,
-  introspectionQuery,
-  GraphQLSchema
-} from 'graphql';
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import { buildClientSchema, introspectionQuery, GraphQLSchema } from 'graphql';
 import fetch from 'isomorphic-fetch';
 import GraphiQL from 'graphiql';
-import styles from './styles.js';
-import { getParameterByName } from  '../helpers/getParameters';
+import { getParameterByName } from '../helpers/getParameters';
 import TopBar from './TopBar';
 import GenerateMutation from './GenerateMutation';
-import GetSetQuery from './GetSetQuery';
-import SaveLoadQuery from './SaveLoadQuery';
+import GetSetURL from './GetSetURL';
 import EditHeaderModal from './EditHeaderModal';
 
 export default class CustomGraphiQL extends Component {
   static propTypes = {
-    fetcher: PropTypes.func,
     schema: PropTypes.instanceOf(GraphQLSchema),
-    currentURL: PropTypes.string,
     query: PropTypes.string,
+    currentURL: PropTypes.string,
     variables: PropTypes.string,
     operationName: PropTypes.string,
     response: PropTypes.string,
     storage: PropTypes.shape({
       getItem: PropTypes.func,
-      setItem: PropTypes.func
+      setItem: PropTypes.func,
+      removeItem: PropTypes.func,
     }),
     defaultQuery: PropTypes.string,
     onEditQuery: PropTypes.func,
     onEditVariables: PropTypes.func,
     onEditOperationName: PropTypes.func,
     onToggleDocs: PropTypes.func,
-    getDefaultFieldNames: PropTypes.func
+    getDefaultFieldNames: PropTypes.func,
+    editorTheme: PropTypes.string,
+    onToggleHistory: PropTypes.func,
+    ResultsTooltip: PropTypes.any,
   };
 
   constructor(props) {
@@ -48,12 +43,14 @@ export default class CustomGraphiQL extends Component {
     const currentURL = this.storageGet('currentURL') || props.currentURL;
 
     // Determine the initial query to display.
-    const query = props.query || this.storageGet(`${currentURL}:query`) || undefined;
+    const query = props.query;
 
     // Determine the initial variables to display.
-    const variables = props.variables || this.storageGet(`${currentURL}:variables`);
+    const variables = props.variables;
 
-    const headers = this.storageGet('headers') ? JSON.parse(this.storageGet('headers')) : {};
+    const headers = this.storageGet('headers')
+      ? JSON.parse(this.storageGet('headers'))
+      : {};
 
     // Initialize state
     this.state = {
@@ -64,6 +61,7 @@ export default class CustomGraphiQL extends Component {
       graphQLEndpoint: currentURL,
       schemaFetchError: '',
       headers,
+      editHeaderModalVisible: false
     };
   }
 
@@ -72,231 +70,251 @@ export default class CustomGraphiQL extends Component {
     if (!currentURL) {
       return;
     }
-    this.fetchGraphQLSchema(currentURL);
+    this.handleURLChange(currentURL);
   }
 
-  storageGet = (name) => {
-    return this.storage && this.storage.getItem('cgraphiql:' + name);
-  }
+  storageGet = name => {
+    if (this.storage) {
+      return this.storage.getItem('cgraphiql:' + name);
+    }
+    return null;
+  };
 
   storageSet = (name, value) => {
-    this.storage && this.storage.setItem('cgraphiql:' + name, value);
-  }
+    if (this.storage) {
+      this.storage.setItem('cgraphiql:' + name, value);
+    }
+  };
 
   getCurrentResponse = () => {
     return this.state.response;
-  }
+  };
 
-  setSavedQueries = (savedQueriesString) => {
-    const currentURL = this.state.graphQLEndpoint;
-    this.storageSet(`${currentURL}:queries`, savedQueriesString);
-  }
+  setGraphiQLRef = ref => {
+    this.graphiQL = ref;
+  };
 
-  getSavedQueries = () => {
-    const currentURL = this.state.graphQLEndpoint;
-    const currentURLQueriesString = this.storageGet(`${currentURL}:queries`) || '{}';
-    return JSON.parse(currentURLQueriesString);
-  }
-
-  setQueryFromString = (queryStringInput) => {
-    if (!queryStringInput) {
-      this.updateQueryVariablesResponse('', '');
+  handleUpdateGraphURL = graphURL => {
+    if (!graphURL) {
+      this.handleUpdateQueryVariablesResponse('', '');
       return;
     }
 
-    const queryString = getParameterByName('query', queryStringInput) || '{}';
-    const variablesString = getParameterByName('variables', queryStringInput) || 'null';
-    const responseString = getParameterByName('response', queryStringInput) || this.state.response;
-    const url = new URL(queryStringInput);
+    const queryString = getParameterByName('query', graphURL) || '{}';
+    const variablesString = getParameterByName('variables', graphURL) || 'null';
+    const responseString =
+      getParameterByName('response', graphURL) || this.state.response;
+    const url = new URL(graphURL);
     const graphQLEndpoint = url.origin + url.pathname;
     if (graphQLEndpoint !== this.state.graphQLEndpoint) {
-      this.fetchGraphQLSchema(graphQLEndpoint);
-      this.state.graphQLEndpoint = graphQLEndpoint;
+      this.handleURLChange(graphQLEndpoint);
+      this.setState({ graphQLEndpoint });
     }
 
-    this.updateQueryVariablesResponse(queryString, variablesString, responseString);
-  }
+    this.handleUpdateQueryVariablesResponse(
+      queryString,
+      variablesString,
+      responseString
+    );
+  };
 
-  updateQueryVariablesResponse = (queryString, variablesString, responseString) => {
-    const currentURL = this.state.graphQLEndpoint;
-    this.storageSet(`${currentURL}:query`, queryString);
-    this.storageSet(`${currentURL}:variables`, variablesString);
+  handlePrettifyQuery = () => {
+    if (this.graphiQL) {
+      this.graphiQL.handlePrettifyQuery();
+    }
+    this.handlePrettifyVariables();
+  };
+
+  handlePrettifyVariables = () => {
+    if (!this.state.variables) {
+      return;
+    }
+    const variables = this.state.variables || '{}';
+    try {
+      const formattedVariables = JSON.stringify(JSON.parse(variables), null, 2);
+      this.setState({
+        variables: formattedVariables
+      });
+    } catch (error) {
+      this.setState({
+        response: `Query Variables: Not a valid JSON\n${error}`
+      });
+    }
+  };
+
+  handleToggleHistory = () => {
+    if (this.graphiQL) {
+      this.graphiQL.handleToggleHistory();
+    }
+  };
+
+  handleUpdateQueryVariablesResponse = (
+    queryString,
+    variablesString,
+    responseString
+  ) => {
     this.setState({
       query: queryString,
       variables: variablesString,
       response: responseString || this.state.response
     });
-  }
+  };
 
-  fetchGraphQLSchema = async (url) => {
-    try {
-      const headers = this.state.headers;
-      const graphQLParams = { query: introspectionQuery };
-      const response = await fetch(url, {
-        method: 'post',
-        // credentials: 'same-origin',
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers
-        },
-        body: JSON.stringify(graphQLParams)
+  handleURLChange = url => {
+    const headers = this.state.headers;
+    const graphQLParams = { query: introspectionQuery };
+    return fetch(url, {
+      method: 'post',
+      // credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: JSON.stringify(graphQLParams)
+    })
+      .then(response => response.json())
+      .then(result => {
+        if (result.errors) {
+          throw new Error(JSON.stringify(result.errors));
+        }
+        const schema = buildClientSchema(result.data);
+        this.storageSet('currentURL', url);
+        this.setState({
+          schema,
+          graphQLEndpoint: url,
+          schemaFetchError: '',
+          response: 'Schema fetched'
+        });
+      })
+      .catch(error => {
+        // eslint-disable-next-line no-console
+        console.error('Error in fetching GraphQL schema', error);
+        this.setState({
+          schemaFetchError: error.toString(),
+          response: error.toString()
+        });
       });
+  };
 
-      // GET method
-      // const response = await fetch(`${url}?query=${encodeURIComponent(graphQLParams.query)}}&variables=${encodeURIComponent('{}')}`, { method: 'get' });
-      
-      const result = await response.json();
-      if (result.errors) {
-        throw new Error(JSON.stringify(result.errors));
-      }
-      const schema = buildClientSchema(result.data);
-      this.storageSet('currentURL', url);
-      this.setState({
-        schema,
-        graphQLEndpoint: url,
-        schemaFetchError: '',
-        response: 'Schema fetched',
-      });
-    } catch (error) {
+  graphQLFetcher = graphQLParams => {
+    const headers = this.state.headers;
+    const graphQLEndpoint = this.state.graphQLEndpoint;
+    if (!graphQLEndpoint) {
       // eslint-disable-next-line no-console
-      console.error('Error in fetching GraphQL schema', error);
-      this.setState({
-        schemaFetchError: error.toString(),
-        response: error.toString(),
-      });
+      console.warn('Please set a GraphQL endpoint');
+      return null;
     }
-  }
-
-  graphQLFetcher = async (graphQLParams) => {
-    try {
-      const headers = this.state.headers;
-      const graphQLEndpoint = this.state.graphQLEndpoint;
-      if (!graphQLEndpoint) {
-        console.warn('Please set a GraphQL endpoint');
-        return null;
-      }
-      const response = await fetch(graphQLEndpoint, {
-        method: 'post',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          ...headers
-        },
-        body: JSON.stringify(graphQLParams),
-        credentials: 'include',
+    return fetch(graphQLEndpoint, {
+      method: 'post',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: JSON.stringify(graphQLParams),
+      credentials: 'include'
+    })
+      .then(response => response.json())
+      .then(result => {
+        this.setState({ response: JSON.stringify(result, null, 2) });
+        return result;
+      })
+      .catch(error => {
+        const result = {
+          error: error.toString()
+        };
+        this.setState({ response: JSON.stringify(result, null, 2) });
+        return result;
       });
-      const result = await response.json();
-      this.state.response = JSON.stringify(result, null, 2);
-      return result;
-    } catch (error) {
-      const result = {
-        error: error.toString()
-      };
-      this.state.response = JSON.stringify(result, null, 2);
-      return result;
-    }
-  }
+  };
 
-  updateHeaders = (newHeaders) => {
+  handleHeadersUpdated = newHeaders => {
     this.storageSet('headers', JSON.stringify(newHeaders));
     this.setState({
       headers: newHeaders,
-      editHeaderModalVisible: false,
-    });
-  }
-
-  hideEditHeaderModal = () => {
-    this.setState({
       editHeaderModalVisible: false
     });
-  }
+  };
 
-  showEditHeaderModal = () => {
+  handleToggleEditHeaders = () => {
     this.setState({
-      editHeaderModalVisible: true
+      editHeaderModalVisible: !this.state.editHeaderModalVisible
     });
-  }
+  };
 
-  onEditQuery = (queryString) => {
+  handleEditQuery = queryString => {
     this.setState({
       query: queryString
     });
-    this.props.onEditQuery && this.onEditQuery(queryString);
-    const currentURL = this.state.graphQLEndpoint;
-    if (!currentURL) {
-      return;
+    if (this.props.onEditQuery) {
+      this.onEditQuery(queryString);
     }
+  };
 
-    this.storageSet(`${currentURL}:query`, queryString);
-  }
-
-  onEditVariables = (variablesString) => {
+  handleEditVariables = queryString => {
+    if (this.props.onEditVariables) {
+      this.props.onEditVariables(queryString);
+    }
     this.setState({
-      variables: variablesString
+      variables: queryString
     });
-    this.props.onEditVariables && this.onEditVariables(queryString);
-    const currentURL = this.state.graphQLEndpoint;
-    if (!currentURL) {
-      return;
-    }
-
-    this.storageSet(`${currentURL}:variables`, variablesString);
-  }
+  };
 
   render() {
     const children = React.Children.toArray(this.props.children);
 
     const logo = children.find(child => child.type === GraphiQL.Logo);
-    
-    const toolbar = children.find(child => child.type === GraphiQL.Toolbar);
-
     const footer = children.find(child => child.type === GraphiQL.Footer);
 
     return (
-      <div style={styles.container}>
+      <div className="cgraphiql-container">
         <TopBar
           schemaFetchError={this.state.schemaFetchError}
-          fetchGraphQLSchema={this.fetchGraphQLSchema}
+          onChangeURL={this.handleURLChange}
           graphQLEndpoint={this.state.graphQLEndpoint}
           headers={this.state.headers}
-          onEditHeadersButtonPressed={this.showEditHeaderModal}
+          onEditHeaders={this.handleToggleEditHeaders}
         />
         <GraphiQL
+          ref={this.setGraphiQLRef}
           fetcher={this.graphQLFetcher}
           schema={this.state.schema}
           query={this.state.query}
           variables={this.state.variables}
           operationName={this.props.operationName}
           response={this.state.response}
-          onEditQuery={this.onEditQuery}
-          onEditVariables={this.onEditVariables}
+          onEditQuery={this.handleEditQuery}
+          onEditVariables={this.handleEditVariables}
           onEditOperationName={this.props.onEditOperationName}
           onToggleDocs={this.props.onToggleDocs}
           getDefaultFieldNames={this.props.getDefaultFieldNames}
+          editorTheme={this.props.editorTheme}
+          onToggleHistory={this.props.onToggleHistory}
+          ResultsTooltip={this.props.ResultsTooltip}
         >
           <GraphiQL.Toolbar>
-            <div style={styles.toolBarButtons}>
-              <GenerateMutation
-                schema={this.state.schema}
-                updateQueryVariablesResponse={this.updateQueryVariablesResponse}
-              />
-              <GetSetQuery
-                query={this.state.query}
-                variables={this.state.variables}
-                graphQLEndpoint={this.state.graphQLEndpoint}
-                setQueryFromString={this.setQueryFromString}
-              />
-              <SaveLoadQuery
-                query={this.state.query}
-                variables={this.state.variables}
-                graphQLEndpoint={this.state.graphQLEndpoint}
-                getSavedQueries={this.getSavedQueries}
-                setSavedQueries={this.setSavedQueries}
-                setQueryFromString={this.setQueryFromString}
-                getCurrentResponse={this.getCurrentResponse}
-              />
-              {toolbar}
-            </div>
+            <GraphiQL.Button
+              onClick={this.handlePrettifyQuery}
+              title="Prettify Query (Shift-Ctrl-P)"
+              label="Prettify"
+            />
+            <GraphiQL.Button
+              onClick={this.handleToggleHistory}
+              title="Show History"
+              label="History"
+            />
+            <GenerateMutation
+              schema={this.state.schema}
+              onUpdateQueryVariablesResponse={
+                this.handleUpdateQueryVariablesResponse
+              }
+            />
+            <GetSetURL
+              query={this.state.query}
+              variables={this.state.variables}
+              graphQLEndpoint={this.state.graphQLEndpoint}
+              onUpdateGraphURL={this.handleUpdateGraphURL}
+            />
           </GraphiQL.Toolbar>
           {logo}
           {footer}
@@ -309,8 +327,8 @@ export default class CustomGraphiQL extends Component {
           return (
             <EditHeaderModal
               headers={this.state.headers}
-              updateHeaders={this.updateHeaders}
-              hideEditHeaderModal={this.hideEditHeaderModal}
+              onUpdateHeaders={this.handleHeadersUpdated}
+              onEditHeadersCancel={this.handleToggleEditHeaders}
             />
           );
         })()}
